@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { Project } from 'ts-morph';
+import { ImportDeclaration, Project } from 'ts-morph';
 import * as vscode from 'vscode';
 
 export type FileAnalysisResult = {
@@ -7,6 +7,8 @@ export type FileAnalysisResult = {
   filePath: string;
   languageId: string;
   lineCount: number;
+  imports: string[];
+  exports: string[];
 };
 
 export class FileAnalyzer {
@@ -24,6 +26,10 @@ export class FileAnalyzer {
       filePath: sourceFile.getFilePath(),
       languageId: document.languageId,
       lineCount: document.lineCount,
+      imports: sourceFile.getImportDeclarations().map((importDeclaration) =>
+        importDeclaration.getModuleSpecifierValue()
+      ),
+      exports: Array.from(sourceFile.getExportedDeclarations().keys()),
     };
   }
 }

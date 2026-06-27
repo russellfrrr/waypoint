@@ -16,7 +16,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 
 		const result = analyzer.analyze(editor.document);
 
-		vscode.window.showInformationMessage(`Waypoint analyzed ${result.fileName}: ${result.languageId}, ${result.lineCount} lines`);
+		vscode.window.showInformationMessage(`Waypoint analyzed ${result.fileName}: ${result.imports.length} imports, ${result.exports.length} exports`);
 	});
 
 	context.subscriptions.push(disposable);
