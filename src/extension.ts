@@ -1,7 +1,10 @@
 import * as vscode from 'vscode';
+import { FileAnalyzer } from './analyzer/FileAnalyzer';
 
 export const activate = (context: vscode.ExtensionContext) => {
 	console.log('Waypoint is now active.');
+
+	const analyzer = new FileAnalyzer();
 
 	const disposable = vscode.commands.registerCommand('waypoint.analyzeCurrentFile', () => {
 		const editor = vscode.window.activeTextEditor;
@@ -11,12 +14,9 @@ export const activate = (context: vscode.ExtensionContext) => {
 			return;
 		}
 
-		const document = editor.document;
-		const fileName = document.fileName;
-		const languageId = document.languageId;
-		const lineCount = document.lineCount;
+		const result = analyzer.analyze(editor.document);
 
-		vscode.window.showInformationMessage(`Waypoint found: ${fileName} (${languageId}, ${lineCount} lines)`);
+		vscode.window.showInformationMessage(`Waypoint analyzed ${result.fileName}: ${result.languageId}, ${result.lineCount} lines`);
 	});
 
 	context.subscriptions.push(disposable);
