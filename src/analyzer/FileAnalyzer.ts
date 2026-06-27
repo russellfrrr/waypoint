@@ -1,15 +1,8 @@
 import * as path from 'path';
 import { ImportDeclaration, Project } from 'ts-morph';
 import * as vscode from 'vscode';
+import { FileAnalysisResult } from '../types';
 
-export type FileAnalysisResult = {
-  fileName: string;
-  filePath: string;
-  languageId: string;
-  lineCount: number;
-  imports: string[];
-  exports: string[];
-};
 
 export class FileAnalyzer {
   private readonly project = new Project();

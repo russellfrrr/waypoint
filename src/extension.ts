@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { FileAnalyzer } from './analyzer/FileAnalyzer';
+import { formatAnalysisResult } from './utils/formatAnalysisResult';
 
 export const activate = (context: vscode.ExtensionContext) => {
 	console.log('Waypoint is now active.');
@@ -16,36 +17,10 @@ export const activate = (context: vscode.ExtensionContext) => {
 		}
 
 		const result = analyzer.analyze(editor.document);
+		const output = formatAnalysisResult(result);
 
 		outputChannel.clear();
-		outputChannel.appendLine('Waypoint Analysis');
-		outputChannel.appendLine('');
-		outputChannel.appendLine(`File: ${result.fileName}`);
-		outputChannel.appendLine(`Path: ${result.filePath}`);
-		outputChannel.appendLine(`Language: ${result.languageId}`);
-		outputChannel.appendLine(`Lines: ${result.lineCount}`);
-		outputChannel.appendLine('');
-		outputChannel.appendLine('Imports:');
-
-		if (result.imports.length === 0) {
-			outputChannel.appendLine('- None');
-		} else {
-			result.imports.forEach((importName) => {
-				outputChannel.appendLine(`- ${importName}`);
-			});
-		}
-
-		outputChannel.appendLine('');
-		outputChannel.appendLine('Exports:');
-
-		if (result.exports.length === 0) {
-			outputChannel.appendLine('- None');
-		} else {
-			result.exports.forEach((exportName) => {
-				outputChannel.appendLine(`- ${exportName}`);
-			});
-		}
-
+		outputChannel.appendLine(output);
 		outputChannel.show(true);
 
 		vscode.window.showInformationMessage(`Waypoint analyzed ${result.fileName}.`);
