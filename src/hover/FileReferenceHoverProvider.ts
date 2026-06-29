@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { resolveFileReference } from '../utils/pathUtils';
 
 export class FileReferenceHoverProvider implements vscode.HoverProvider {
   public provideHover(
@@ -18,7 +19,13 @@ export class FileReferenceHoverProvider implements vscode.HoverProvider {
       return undefined;
     }
 
-    return new vscode.Hover(`Waypoint detected file reference: \`${fileReference}\``);
+    const resolvedPath = resolveFileReference(document.fileName, fileReference);
+
+    if (!resolvedPath) {
+      return new vscode.Hover(`Waypoint file reference\n\nReference: \`${fileReference}\`\n\nResolved: not found`);
+    }
+
+    return new vscode.Hover(`Waypoint file reference\n\nReference: \`${fileReference}\`\n\nResolved: \`${resolvedPath}\``);
   }
 }
 
