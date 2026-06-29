@@ -10,4 +10,5 @@ export type FileAnalysisResult = {
   lineCount: number;
   imports: string[];
   exports: ExportedDeclaration[];
+  canParse: boolean;
 };

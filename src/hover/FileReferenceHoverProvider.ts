@@ -3,6 +3,7 @@ import { FileAnalyzer } from '../analyzer/FileAnalyzer';
 import { resolveFileReference } from '../utils/pathUtils';
 import { FileAnalysisResult } from '../types';
 
+
 export class FileReferenceHoverProvider implements vscode.HoverProvider {
   public constructor(private readonly analyzer: FileAnalyzer) {}
 
@@ -41,6 +42,13 @@ export class FileReferenceHoverProvider implements vscode.HoverProvider {
 
     markdown.appendMarkdown('**Waypoint File Reference**\n\n');
     markdown.appendMarkdown(`\`${fileReference}\` -> \`${result.fileName}\`\n\n`);
+    markdown.appendMarkdown(`Lines: ${result.lineCount}\n\n`);
+
+    if (!result.canParse) {
+      markdown.appendMarkdown('Waypoint resolved this file, but it is not a JavaScript or TypeScript source file.');
+      
+      return new vscode.Hover(markdown);
+    }
 
     markdown.appendMarkdown('**Imports**\n\n');
     markdown.appendMarkdown(formatHoverList(result.imports).join('\n'));

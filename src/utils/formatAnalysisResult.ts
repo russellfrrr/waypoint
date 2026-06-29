@@ -8,6 +8,7 @@ export const formatAnalysisResult = (result: FileAnalysisResult): string => {
 		`Path: ${result.filePath}`,
 		`Language: ${result.languageId}`,
 		`Lines: ${result.lineCount}`,
+		`Parseable: ${result.canParse ? 'Yes' : 'No'}`,
 		'',
 		'Imports:',
 		...formatList(result.imports),

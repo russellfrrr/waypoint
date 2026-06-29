@@ -26,6 +26,18 @@ export class FileAnalyzer {
     languageId: string,
     lineCount: number
   ): FileAnalysisResult {
+    if (!canParseWithTypeScript(filePath)) {
+      return {
+        fileName: path.basename(filePath),
+        filePath,
+        languageId,
+        lineCount,
+        imports: [],
+        exports: [],
+        canParse: false,
+      };
+    }
+    
     const sourceFile = this.project.createSourceFile(filePath, text, { overwrite: true });
 
     return {
@@ -33,7 +45,7 @@ export class FileAnalyzer {
       filePath: sourceFile.getFilePath(),
       languageId,
       lineCount,
-      imports: sourceFile.getImportDeclarations().map((importDeclaration) => 
+      imports: sourceFile.getImportDeclarations().map((importDeclaration) =>
         importDeclaration.getModuleSpecifierValue()
       ),
       exports: Array.from(sourceFile.getExportedDeclarations()).map(([name, declarations]) => {
@@ -44,6 +56,7 @@ export class FileAnalyzer {
           kind: declaration ? getDeclarationKind(declaration) : 'unknown',
         };
       }),
+      canParse: true,
     };
   }
 }
@@ -59,7 +72,29 @@ const getLanguageIdFromFilePath = (filePath: string): string => {
     return 'javascript';
   }
 
+  if (extension === '.json') {
+		return 'json';
+	}
+
+	if (extension === '.css') {
+		return 'css';
+	}
+
+	if (extension === '.scss') {
+		return 'scss';
+	}
+
+	if (extension === '.svg') {
+		return 'svg';
+	}
+  
   return 'plaintext';
+};
+
+const canParseWithTypeScript = (filePath: string): boolean => {
+  const extension = path.extname(filePath);
+
+  return ['.ts', '.tsx', '.js', '.jsx'].includes(extension);
 };
 
 const getDeclarationKind = (node: Node): string => {

@@ -1,7 +1,17 @@
 import * as path from 'path';
 import * as fs from 'fs';
 
-const supportedExtensions = ['.ts', '.tsx', '.js', '.jsx'];
+const supportedExtensions = [
+  '.ts', 
+  '.tsx', 
+  '.js', 
+  '.jsx',
+  '.json',
+  '.css',
+  '.scss',
+  '.svg',
+  '.png',
+];
 
 export const resolveFileReference = (
   currentFilePath: string,
