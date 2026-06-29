@@ -2,9 +2,12 @@ import * as vscode from 'vscode';
 import { FileAnalyzer } from '../analyzer/FileAnalyzer';
 import { resolveFileReference } from '../utils/pathUtils';
 import { FileAnalysisResult } from '../types';
+import { Node, Project, SyntaxKind } from 'ts-morph';
 
 
 export class FileReferenceHoverProvider implements vscode.HoverProvider {
+  private readonly project = new Project();
+
   public constructor(private readonly analyzer: FileAnalyzer) {}
 
   public provideHover(
@@ -21,6 +24,10 @@ export class FileReferenceHoverProvider implements vscode.HoverProvider {
     const fileReference = text.slice(1, -1);
 
     if (!isLikelyFileReference(fileReference)) {
+      return undefined;
+    }
+
+    if (!this.isImportOrExportReference(document, range)) {
       return undefined;
     }
 
@@ -58,6 +65,34 @@ export class FileReferenceHoverProvider implements vscode.HoverProvider {
     markdown.appendMarkdown(formatExportHoverList(result.exports).join('\n'));
 
     return new vscode.Hover(markdown);
+  }
+
+  private isImportOrExportReference(
+    document: vscode.TextDocument,
+    range: vscode.Range
+  ): boolean {
+    const sourceFile = this.project.createSourceFile(
+      document.fileName,
+      document.getText(),
+      { overwrite: true }
+    );
+
+    const offset = document.offsetAt(range.start);
+    const node = sourceFile.getDescendantAtPos(offset);
+
+    if (!node) {
+      return false;
+    }
+
+    const stringLiteral = node.getFirstAncestorByKind(SyntaxKind.StringLiteral);
+
+    if (!stringLiteral) {
+      return false;
+    }
+
+    const parent = stringLiteral.getParent();
+
+    return Node.isImportDeclaration(parent) || Node.isExportDeclaration(parent);
   }
 }
 
