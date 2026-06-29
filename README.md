@@ -1,71 +1,65 @@
-# waypoint README
+# Waypoint
 
-This is the README for your extension "waypoint". After writing up a brief description, we recommend including the following sections.
+Waypoint is an open-source VS Code extension that helps developers understand unfamiliar codebases through static analysis and contextual insights. It aims to reduce onboarding time by making project structure, dependencies, and code relationships easier to explore directly inside the editor.
 
-## Features
+## Motivation
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+Every developer has experienced opening a new repository and asking:
 
-For example if there is an image subfolder under your extension project workspace:
+- Where do I even start?
+- What does this file do?
+- What depends on this module?
+- Where is this used?
 
-\!\[feature X\]\(images/feature-x.png\)
+Waypoint exists to answer those questions without forcing developers to manually search through dozens of files.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## Current Features
 
-## Requirements
+- Analyze the currently active file
+- Display file metadata (name, path, language, line count)
+- Extract imported modules
+- Extract exported declarations
+- Display analysis in a dedicated VS Code output channel
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## Roadmap
 
-## Extension Settings
+### V1 — Static Code Analysis
+- [x] Analyze active file
+- [x] Extract imports
+- [x] Extract exports
+- [x] Output analysis in VS Code
+- [ ] Hover over file paths and imports to view summaries
+- [ ] Show incoming and outgoing dependencies
+- [ ] Navigate between related files
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+### V2 — AI-Assisted Insights
+- [ ] Generate concise file summaries
+- [ ] Explain unfamiliar modules
+- [ ] Recommend which files to read next
+- [ ] Summarize project architecture
 
-For example:
+### Future Vision
+- Language-agnostic support
+- Interactive dependency graphs
+- Project onboarding mode
+- Codebase health metrics
+- Team knowledge integration
 
-This extension contributes the following settings:
+## Why Waypoint?
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+Waypoint isn't intended to replace documentation.
 
-## Known Issues
+Instead, it acts as a navigation layer that helps developers quickly understand how a project is structured and how its pieces fit together.
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## Tech Stack
 
-## Release Notes
+- TypeScript
+- VS Code Extension API
+- ts-morph
 
-Users appreciate release notes as you update your extension.
+## Running Locally
 
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+```bash
+pnpm install
+pnpm compile
+```

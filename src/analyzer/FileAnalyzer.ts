@@ -1,5 +1,5 @@
 import * as path from 'path';
-import { ImportDeclaration, Project } from 'ts-morph';
+import { Project } from 'ts-morph';
 import * as vscode from 'vscode';
 import { FileAnalysisResult } from '../types';
 
