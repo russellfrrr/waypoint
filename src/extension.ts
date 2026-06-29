@@ -13,7 +13,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 			{ language: 'typescript', scheme: 'file' },
 			{ language: 'javascript', scheme: 'file' },
 		],
-		new FileReferenceHoverProvider()
+		new FileReferenceHoverProvider(analyzer)
 	);
 
 	const disposable = vscode.commands.registerCommand('waypoint.analyzeCurrentFile', () => {
