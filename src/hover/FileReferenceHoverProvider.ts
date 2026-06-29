@@ -43,28 +43,38 @@ export class FileReferenceHoverProvider implements vscode.HoverProvider {
       return new vscode.Hover(markdown);
     }
 
-    const result = this.analyzer.analyzeFile(resolvedPath);
+    try {
+      const result = this.analyzer.analyzeFile(resolvedPath);
 
-    const markdown = new vscode.MarkdownString();
+      const markdown = new vscode.MarkdownString();
 
-    markdown.appendMarkdown('**Waypoint File Reference**\n\n');
-    markdown.appendMarkdown(`\`${fileReference}\` -> \`${result.fileName}\`\n\n`);
-    markdown.appendMarkdown(`Lines: ${result.lineCount}\n\n`);
+      markdown.appendMarkdown('**Waypoint File Reference**\n\n');
+      markdown.appendMarkdown(`\`${fileReference}\` -> \`${result.fileName}\`\n\n`);
+      markdown.appendMarkdown(`Lines: ${result.lineCount}\n\n`);
 
-    if (!result.canParse) {
-      markdown.appendMarkdown('Waypoint resolved this file, but it is not a JavaScript or TypeScript source file.');
-      
+      if (!result.canParse) {
+        markdown.appendMarkdown('Waypoint resolved this file, but it is not a JavaScript or TypeScript source file.');
+
+        return new vscode.Hover(markdown);
+      }
+
+      markdown.appendMarkdown('**Imports**\n\n');
+      markdown.appendMarkdown(formatHoverList(result.imports).join('\n'));
+      markdown.appendMarkdown('\n\n');
+
+      markdown.appendMarkdown('**Exports**\n\n');
+      markdown.appendMarkdown(formatExportHoverList(result.exports).join('\n'));
+
+      return new vscode.Hover(markdown);
+    } catch (err) {
+      const markdown = new vscode.MarkdownString();
+
+      markdown.appendMarkdown('**Waypoint File Reference**\n\n');
+      markdown.appendMarkdown(`\`${fileReference}\`\n\n`);
+      markdown.appendMarkdown('Could not analyze this file.');
+
       return new vscode.Hover(markdown);
     }
-
-    markdown.appendMarkdown('**Imports**\n\n');
-    markdown.appendMarkdown(formatHoverList(result.imports).join('\n'));
-    markdown.appendMarkdown('\n\n');
-
-    markdown.appendMarkdown('**Exports**\n\n');
-    markdown.appendMarkdown(formatExportHoverList(result.exports).join('\n'));
-
-    return new vscode.Hover(markdown);
   }
 
   private isImportOrExportReference(
