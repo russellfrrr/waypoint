@@ -26,22 +26,30 @@ export class FileReferenceHoverProvider implements vscode.HoverProvider {
     const resolvedPath = resolveFileReference(document.fileName, fileReference);
 
     if (!resolvedPath) {
-      return new vscode.Hover(`Waypoint file reference\n\nReference: \`${fileReference}\`\n\nResolved: not found`);
+      const markdown = new vscode.MarkdownString();
+
+      markdown.appendMarkdown('**Waypoint File Reference**\n\n');
+      markdown.appendMarkdown(`\`${fileReference}\`\n\n`);
+      markdown.appendMarkdown('Resolved: not found');
+
+      return new vscode.Hover(markdown);
     }
 
     const result = this.analyzer.analyzeFile(resolvedPath);
 
-    return new vscode.Hover([
-      'Waypoint file reference',
-      '',
-      `Reference \`${fileReference}\``,
-      `File: \`${result.fileName}\``,
-      `Imports:`,
-      ...formatHoverList(result.imports),
-      '',
-      `Exports:`,
-      ...formatExportHoverList(result.exports),
-    ].join('\n\n'));
+    const markdown = new vscode.MarkdownString();
+
+    markdown.appendMarkdown('**Waypoint File Reference**\n\n');
+    markdown.appendMarkdown(`\`${fileReference}\` -> \`${result.fileName}\`\n\n`);
+
+    markdown.appendMarkdown('**Imports**\n\n');
+    markdown.appendMarkdown(formatHoverList(result.imports).join('\n'));
+    markdown.appendMarkdown('\n\n');
+
+    markdown.appendMarkdown('**Exports**\n\n');
+    markdown.appendMarkdown(formatExportHoverList(result.exports).join('\n'));
+
+    return new vscode.Hover(markdown);
   }
 }
 
