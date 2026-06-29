@@ -36,11 +36,21 @@ export class FileReferenceHoverProvider implements vscode.HoverProvider {
       `Reference \`${fileReference}\``,
       `File: \`${result.fileName}\``,
       `Imports: ${result.imports.length}`,
-      `Exports: ${result.exports.length}`,
+      '',
+      `Exports:`,
+      ...formatHoverList(result.exports),
     ].join('\n\n'));
   }
 }
 
 const isLikelyFileReference = (value: string): boolean => {
   return value.startsWith('./') || value.startsWith('../');
+};
+
+const formatHoverList = (items: string[]): string[] => {
+  if (items.length === 0) {
+    return ['- None'];
+  }
+
+  return items.map((item) => `- ${item}`);
 };
