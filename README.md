@@ -23,7 +23,7 @@ Waypoint exists to answer those questions without forcing developers to manually
 
 ## Roadmap
 
-### V1 — Static Code Analysis
+### V1 - Static Code Analysis
 - [x] Analyze active file
 - [x] Extract imports
 - [x] Extract exports
@@ -32,7 +32,7 @@ Waypoint exists to answer those questions without forcing developers to manually
 - [ ] Show incoming and outgoing dependencies
 - [ ] Navigate between related files
 
-### V2 — AI-Assisted Insights
+### V2 - AI-Assisted Insights
 - [ ] Generate concise file summaries
 - [ ] Explain unfamiliar modules
 - [ ] Recommend which files to read next
@@ -61,5 +61,5 @@ Instead, it acts as a navigation layer that helps developers quickly understand 
 
 ```bash
 pnpm install
-pnpm compile
+pnpm run compile
 ```
