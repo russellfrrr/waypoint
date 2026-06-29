@@ -3,6 +3,7 @@ import * as path from 'path';
 import { Project, Node } from 'ts-morph';
 import * as vscode from 'vscode';
 import { FileAnalysisResult } from '../types';
+import { getWorkspaceRelativePath } from '../utils/pathUtils';
 
 
 export class FileAnalyzer {
@@ -30,6 +31,7 @@ export class FileAnalyzer {
       return {
         fileName: path.basename(filePath),
         filePath,
+        relativePath: getWorkspaceRelativePath(filePath),
         languageId,
         lineCount,
         imports: [],
@@ -43,6 +45,7 @@ export class FileAnalyzer {
     return {
       fileName: path.basename(sourceFile.getFilePath()),
       filePath: sourceFile.getFilePath(),
+      relativePath: getWorkspaceRelativePath(sourceFile.getFilePath()),
       languageId,
       lineCount,
       imports: sourceFile.getImportDeclarations().map((importDeclaration) =>
@@ -87,7 +90,7 @@ const getLanguageIdFromFilePath = (filePath: string): string => {
 	if (extension === '.svg') {
 		return 'svg';
 	}
-  
+
   return 'plaintext';
 };
 

@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
+import * as vscode from 'vscode';
 
 const supportedExtensions = [
   '.ts', 
@@ -55,4 +56,14 @@ const resolveIndexFilePath = (basePath: string): string | undefined => {
   }
 
   return undefined;
+};
+
+export const getWorkspaceRelativePath = (filePath: string): string => {
+  const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(filePath));
+
+  if (!workspaceFolder) {
+    return filePath;
+  }
+
+  return path.relative(workspaceFolder.uri.fsPath, filePath);
 };

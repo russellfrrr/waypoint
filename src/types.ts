@@ -6,6 +6,7 @@ export type ExportedDeclaration = {
 export type FileAnalysisResult = {
   fileName: string;
   filePath: string;
+  relativePath: string;
   languageId: string;
   lineCount: number;
   imports: string[];

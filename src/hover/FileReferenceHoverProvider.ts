@@ -50,6 +50,7 @@ export class FileReferenceHoverProvider implements vscode.HoverProvider {
 
       markdown.appendMarkdown('**Waypoint File Reference**\n\n');
       markdown.appendMarkdown(`\`${fileReference}\` -> \`${result.fileName}\`\n\n`);
+      markdown.appendMarkdown(`Path: \`${result.relativePath}\`\n\n`);
       markdown.appendMarkdown(`Lines: ${result.lineCount}\n\n`);
 
       if (!result.canParse) {
@@ -94,7 +95,9 @@ export class FileReferenceHoverProvider implements vscode.HoverProvider {
       return false;
     }
 
-    const stringLiteral = node.getFirstAncestorByKind(SyntaxKind.StringLiteral);
+    const stringLiteral = Node.isStringLiteral(node)
+      ? node
+      : node.getFirstAncestorByKind(SyntaxKind.StringLiteral);
 
     if (!stringLiteral) {
       return false;
