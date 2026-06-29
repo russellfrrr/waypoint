@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Project } from 'ts-morph';
+import { Project, Node } from 'ts-morph';
 import * as vscode from 'vscode';
 import { FileAnalysisResult } from '../types';
 
@@ -36,7 +36,14 @@ export class FileAnalyzer {
       imports: sourceFile.getImportDeclarations().map((importDeclaration) => 
         importDeclaration.getModuleSpecifierValue()
       ),
-      exports: Array.from(sourceFile.getExportedDeclarations().keys()),
+      exports: Array.from(sourceFile.getExportedDeclarations()).map(([name, declarations]) => {
+        const declaration = declarations[0];
+
+        return {
+          name,
+          kind: declaration ? getDeclarationKind(declaration) : 'unknown',
+        };
+      }),
     };
   }
 }
@@ -48,9 +55,37 @@ const getLanguageIdFromFilePath = (filePath: string): string => {
     return 'typescript';
   }
 
-  if (extension === ' .js' || extension === '.jsx') {
+  if (extension === '.js' || extension === '.jsx') {
     return 'javascript';
   }
 
   return 'plaintext';
+};
+
+const getDeclarationKind = (node: Node): string => {
+  if (Node.isFunctionDeclaration(node)) {
+    return 'function';
+  }
+
+  if (Node.isClassDeclaration(node)) {
+    return 'class';
+  }
+
+  if (Node.isInterfaceDeclaration(node)) {
+    return 'interface';
+  }
+
+  if (Node.isTypeAliasDeclaration(node)) {
+    return 'type';
+  }
+
+  if (Node.isVariableDeclaration(node)) {
+    return 'const';
+  }
+
+  if (Node.isEnumDeclaration(node)) {
+    return 'enum';
+  }
+
+  return node.getKindName();
 };

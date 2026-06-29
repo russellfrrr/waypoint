@@ -13,7 +13,7 @@ export const formatAnalysisResult = (result: FileAnalysisResult): string => {
 		...formatList(result.imports),
 		'',
 		'Exports:',
-		...formatList(result.exports),
+		...formatExportList(result.exports),
 	];
 
 	return lines.join('\n');
@@ -25,4 +25,12 @@ const formatList = (items: string[]): string[] => {
 	}
 
 	return items.map((item) => `- ${item}`);
+};
+
+const formatExportList = (items: FileAnalysisResult['exports']):string [] => {
+	if (items.length ===0) {
+		return ['- None'];
+	}
+
+	return items.map((item) => `- ${item.name} (${item.kind})`);
 };

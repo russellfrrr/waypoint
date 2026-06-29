@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { FileAnalyzer } from '../analyzer/FileAnalyzer';
 import { resolveFileReference } from '../utils/pathUtils';
+import { FileAnalysisResult } from '../types';
 
 export class FileReferenceHoverProvider implements vscode.HoverProvider {
   public constructor(private readonly analyzer: FileAnalyzer) {}
@@ -39,7 +40,7 @@ export class FileReferenceHoverProvider implements vscode.HoverProvider {
       ...formatHoverList(result.imports),
       '',
       `Exports:`,
-      ...formatHoverList(result.exports),
+      ...formatExportHoverList(result.exports),
     ].join('\n\n'));
   }
 }
@@ -54,4 +55,12 @@ const formatHoverList = (items: string[]): string[] => {
   }
 
   return items.map((item) => `- ${item}`);
+};
+
+const formatExportHoverList = (items: FileAnalysisResult['exports']): string[] => {
+  if (items.length === 0) {
+    return ['- None'];
+  }
+
+  return items.map((item) => `- ${item.name} (${item.kind})`);
 };
