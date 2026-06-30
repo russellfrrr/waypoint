@@ -29,7 +29,7 @@ export class FileReferenceHoverProvider implements vscode.HoverProvider {
       return undefined;
     }
 
-    if (isImportOrExportReference(document, range)) {
+    if (!isImportOrExportReference(document, range)) {
       return undefined;
     }
 
