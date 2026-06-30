@@ -33,7 +33,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 		outputChannel.appendLine(output);
 		outputChannel.show(true);
 
-		vscode.window.showInformationMessage(`Waypoint analyzed ${result.fileName}.`);
+		vscode.window.showInformationMessage(`Waypoint analyzed ${result.staticAnalysis.fileName}.`);
 	});
 
 	const openFileCommand = vscode.commands.registerCommand(

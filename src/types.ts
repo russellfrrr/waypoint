@@ -6,7 +6,7 @@ export type ExportedDeclaration = {
 export type AnalysisStatus = 'parsed' | 'unsupported' | 'too-large';
 export type ImpactLevel = 'low' | 'medium' | 'high';
 
-export type FileAnalysisResult = {
+export type StaticFileAnalysis = {
   fileName: string;
   filePath: string;
   relativePath: string;
@@ -17,4 +17,17 @@ export type FileAnalysisResult = {
   incomingDependents: string[];
   impactLevel: ImpactLevel;
   analysisStatus: AnalysisStatus;
+};
+
+export type AiInsight = {
+  summary: string;
+  responsibilities: string[];
+  changeRisk: string;
+  confidence: 'low' | 'medium' | 'high';
+  evidence: string[];
+};
+
+export type FileAnalysisResult = {
+  staticAnalysis: StaticFileAnalysis;
+  aiInsight?: AiInsight;
 };

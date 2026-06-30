@@ -1,29 +1,37 @@
 import { FileAnalysisResult } from '../types';
 
 export const formatAnalysisResult = (result: FileAnalysisResult): string => {
+	const staticAnalysis = result.staticAnalysis;
+
 	const lines = [
 		'Waypoint Analysis',
 		'=================',
 		'',
-		`File: ${result.fileName}`,
-		`Path: ${result.relativePath}`,
-		`Language: ${result.languageId}`,
-		`Lines: ${result.lineCount}`,
-		`Status: ${result.analysisStatus}`,
-		`Incoming Dependents: ${result.incomingDependents.length}`,
-		`Impact: ${formatImpactLevel(result.impactLevel)}`,
+		'Static Analysis',
+		'---------------',
+		`File: ${staticAnalysis.fileName}`,
+		`Path: ${staticAnalysis.relativePath}`,
+		`Language: ${staticAnalysis.languageId}`,
+		`Lines: ${staticAnalysis.lineCount}`,
+		`Status: ${staticAnalysis.analysisStatus}`,
+		`Incoming Dependents: ${staticAnalysis.incomingDependents.length}`,
+		`Impact: ${formatImpactLevel(staticAnalysis.impactLevel)}`,
 		'',
 		'Imports',
 		'-------',
-		...formatList(result.imports),
+		...formatList(staticAnalysis.imports),
 		'',
 		'Exports',
 		'-------',
-		...formatExportList(result.exports),
+		...formatExportList(staticAnalysis.exports),
 		'',
 		'Imported By',
 		'-----------',
-		...formatList(result.incomingDependents),
+		...formatList(staticAnalysis.incomingDependents),
+		'',
+		'AI Insight',
+		'----------',
+		'Not available yet.',
 	];
 
 	return lines.join('\n');
@@ -37,7 +45,7 @@ const formatList = (items: string[]): string[] => {
 	return items.map((item) => `- ${item}`);
 };
 
-const formatExportList = (items: FileAnalysisResult['exports']): string[] => {
+const formatExportList = (items: FileAnalysisResult['staticAnalysis']['exports']): string[] => {
 	if (items.length === 0) {
 		return ['- None'];
 	}
@@ -45,7 +53,9 @@ const formatExportList = (items: FileAnalysisResult['exports']): string[] => {
 	return items.map((item) => `- ${item.name} (${item.kind})`);
 };
 
-const formatImpactLevel = (impactLevel: FileAnalysisResult['impactLevel']): string => {
+const formatImpactLevel = (
+	impactLevel: FileAnalysisResult['staticAnalysis']['impactLevel']
+): string => {
 	if (impactLevel === 'high') {
 		return 'High';
 	}

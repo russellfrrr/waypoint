@@ -25,16 +25,18 @@ export class FileAnalyzer {
       const incomingDependents = await this.workspaceDependencyAnalyzer.findIncomingDependents(filePath);
 
       return {
-        fileName: path.basename(filePath),
-        filePath,
-        relativePath: getWorkspaceRelativePath(filePath),
-        languageId,
-        lineCount: 0,
-        imports: [],
-        exports: [],
-        incomingDependents,
-        impactLevel: getImpactLevel(incomingDependents.length),
-        analysisStatus: 'too-large',
+        staticAnalysis: {
+          fileName: path.basename(filePath),
+          filePath,
+          relativePath: getWorkspaceRelativePath(filePath),
+          languageId,
+          lineCount: 0,
+          imports: [],
+          exports: [],
+          incomingDependents,
+          impactLevel: getImpactLevel(incomingDependents.length),
+          analysisStatus: 'too-large',
+        },
       };
     }
 
@@ -54,41 +56,45 @@ export class FileAnalyzer {
 
     if (!canParseWithTypeScript(filePath)) {
       return {
-        fileName: path.basename(filePath),
-        filePath,
-        relativePath: getWorkspaceRelativePath(filePath),
-        languageId,
-        lineCount,
-        imports: [],
-        exports: [],
-        incomingDependents,
-        impactLevel: getImpactLevel(incomingDependents.length),
-        analysisStatus: 'unsupported',
+        staticAnalysis: {
+          fileName: path.basename(filePath),
+          filePath,
+          relativePath: getWorkspaceRelativePath(filePath),
+          languageId,
+          lineCount,
+          imports: [],
+          exports: [],
+          incomingDependents,
+          impactLevel: getImpactLevel(incomingDependents.length),
+          analysisStatus: 'unsupported',
+        },
       };
     }
     
     const sourceFile = this.project.createSourceFile(filePath, text, { overwrite: true });
 
     return {
-      fileName: path.basename(sourceFile.getFilePath()),
-      filePath: sourceFile.getFilePath(),
-      relativePath: getWorkspaceRelativePath(sourceFile.getFilePath()),
-      languageId,
-      lineCount,
-      imports: sourceFile.getImportDeclarations().map((importDeclaration) =>
-        importDeclaration.getModuleSpecifierValue()
-      ),
-      exports: Array.from(sourceFile.getExportedDeclarations()).map(([name, declarations]) => {
-        const declaration = declarations[0];
+      staticAnalysis: {
+        fileName: path.basename(sourceFile.getFilePath()),
+        filePath: sourceFile.getFilePath(),
+        relativePath: getWorkspaceRelativePath(sourceFile.getFilePath()),
+        languageId,
+        lineCount,
+        imports: sourceFile.getImportDeclarations().map((importDeclaration) =>
+          importDeclaration.getModuleSpecifierValue()
+        ),
+        exports: Array.from(sourceFile.getExportedDeclarations()).map(([name, declarations]) => {
+          const declaration = declarations[0];
 
-        return {
-          name,
-          kind: declaration ? getDeclarationKind(declaration) : 'unknown',
-        };
-      }),
-      incomingDependents,
-      impactLevel: getImpactLevel(incomingDependents.length),
-      analysisStatus: 'parsed',
+          return {
+            name,
+            kind: declaration ? getDeclarationKind(declaration) : 'unknown',
+          };
+        }),
+        incomingDependents,
+        impactLevel: getImpactLevel(incomingDependents.length),
+        analysisStatus: 'parsed',
+      },
     };
   }
 }

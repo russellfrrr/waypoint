@@ -6,38 +6,32 @@ export const formatResolvedHoverResult = (
   result: FileAnalysisResult
 ): vscode.MarkdownString => {
   const markdown = new vscode.MarkdownString();
+  const staticAnalysis = result.staticAnalysis;
+
   markdown.isTrusted = true;
 
-  markdown.appendMarkdown('**Waypoint File Reference**\n\n');
-  markdown.appendMarkdown(`\`${fileReference}\` -> \`${result.fileName}\`\n\n`);
-  markdown.appendMarkdown(`Path: \`${result.relativePath}\`\n\n`);
-  markdown.appendMarkdown(`[Open referenced file](command:waypoint.openFile?${encodeCommandArgument(result.filePath)})\n\n`);
-  markdown.appendMarkdown(`Lines: ${result.lineCount}\n\n`);
-  markdown.appendMarkdown(`Incoming Dependents: ${result.incomingDependents.length}\n\n`);
-  markdown.appendMarkdown(`Impact: ${formatImpactLevel(result.impactLevel)}\n\n`);
+  markdown.appendMarkdown('**Waypoint Quick Insight**\n\n');
+  markdown.appendMarkdown(`\`${fileReference}\` -> \`${staticAnalysis.fileName}\`\n\n`);
+  markdown.appendMarkdown(`**Path:** \`${staticAnalysis.relativePath}\`\n\n`);
+  markdown.appendMarkdown(`**Impact:** ${formatImpactText(staticAnalysis)}\n\n`);
+  markdown.appendMarkdown(`**${formatPrimaryExport(staticAnalysis)}**\n\n`);
+  markdown.appendMarkdown(`**Stats:** ${formatImportExportCounts(staticAnalysis)}\n\n`);
+  markdown.appendMarkdown(`**Used by:** ${formatDependentCount(staticAnalysis.incomingDependents.length)}\n\n`);
+  markdown.appendMarkdown(
+    `[Open referenced file](command:waypoint.openFile?${encodeCommandArgument(staticAnalysis.filePath)})`
+  );
 
-  if (result.analysisStatus === 'too-large') {
-    markdown.appendMarkdown('Waypoint resolved this file, but it is too large to analyze.');
+  if (staticAnalysis.analysisStatus === 'too-large') {
+    markdown.appendMarkdown('\n\nWaypoint resolved this file, but it is too large to analyze.');
     return markdown;
   }
 
-  if (result.analysisStatus === 'unsupported') {
+  if (staticAnalysis.analysisStatus === 'unsupported') {
     markdown.appendMarkdown(
-      'Waypoint resolved this file, but it is not a JavaScript or TypeScript source file.'
+      '\n\nWaypoint resolved this file, but it is not a JavaScript or TypeScript source file.'
     );
     return markdown;
   }
-
-  markdown.appendMarkdown('**Imports**\n\n');
-  markdown.appendMarkdown(formatList(result.imports).join('\n'));
-  markdown.appendMarkdown('\n\n');
-
-  markdown.appendMarkdown('**Exports**\n\n');
-  markdown.appendMarkdown(formatExportList(result.exports).join('\n'));
-  markdown.appendMarkdown('\n\n');
-
-  markdown.appendMarkdown('**Imported By**\n\n');
-  markdown.appendMarkdown(formatList(result.incomingDependents).join('\n'));
 
   return markdown;
 };
@@ -46,9 +40,8 @@ export const formatUnresolvedHoverResult = (
   fileReference: string
 ): vscode.MarkdownString => {
   const markdown = new vscode.MarkdownString();
-  markdown.isTrusted = true;
 
-  markdown.appendMarkdown('**Waypoint File Reference**\n\n');
+  markdown.appendMarkdown('**Waypoint Quick Insight**\n\n');
   markdown.appendMarkdown(`\`${fileReference}\`\n\n`);
   markdown.appendMarkdown('Resolved: not found');
 
@@ -60,7 +53,7 @@ export const formatErrorHoverResult = (
 ): vscode.MarkdownString => {
   const markdown = new vscode.MarkdownString();
 
-  markdown.appendMarkdown('**Waypoint File Reference**\n\n');
+  markdown.appendMarkdown('**Waypoint Quick Insight**\n\n');
   markdown.appendMarkdown(`\`${fileReference}\`\n\n`);
   markdown.appendMarkdown('Could not analyze this file.');
 
@@ -71,30 +64,55 @@ const encodeCommandArgument = (value: string): string => {
   return encodeURIComponent(JSON.stringify(value));
 };
 
-const formatList = (items: string[]): string[] => {
-  if (items.length === 0) {
-    return ['- None'];
-  }
-
-  return items.map((item) => `- ${item}`);
+const formatImpactText = (
+  staticAnalysis: FileAnalysisResult['staticAnalysis']
+): string => {
+  return `${formatImpactLevel(staticAnalysis.impactLevel)} (${formatDependentCount(
+    staticAnalysis.incomingDependents.length
+  )})`;
 };
 
-const formatExportList = (items: FileAnalysisResult['exports']): string[] => {
-  if (items.length === 0) {
-    return ['- None'];
+const formatPrimaryExport = (
+  staticAnalysis: FileAnalysisResult['staticAnalysis']
+): string => {
+  const primaryExport = staticAnalysis.exports[0];
+
+  if (!primaryExport) {
+    return 'Primary export: None';
   }
 
-  return items.map((item) => `- ${item.name} (${item.kind})`);
+  return `Primary export: ${primaryExport.name} (${primaryExport.kind})`;
 };
 
-const formatImpactLevel = (impactLevel: FileAnalysisResult['impactLevel']): string => {
-	if (impactLevel === 'high') {
-		return 'High';
-	}
+const formatImportExportCounts = (
+  staticAnalysis: FileAnalysisResult['staticAnalysis']
+): string => {
+  return `${formatCount(staticAnalysis.imports.length, 'import')}, ${formatCount(
+    staticAnalysis.exports.length,
+    'export'
+  )}`;
+};
 
-	if (impactLevel === 'medium') {
-		return 'Medium';
-	}
+const formatDependentCount = (count: number): string => {
+  return formatCount(count, 'file');
+};
 
-	return 'Low';
+const formatCount = (count: number, singularLabel: string): string => {
+  const label = count === 1 ? singularLabel : `${singularLabel}s`;
+
+  return `${count} ${label}`;
+};
+
+const formatImpactLevel = (
+  impactLevel: FileAnalysisResult['staticAnalysis']['impactLevel']
+): string => {
+  if (impactLevel === 'high') {
+    return 'High';
+  }
+
+  if (impactLevel === 'medium') {
+    return 'Medium';
+  }
+
+  return 'Low';
 };
