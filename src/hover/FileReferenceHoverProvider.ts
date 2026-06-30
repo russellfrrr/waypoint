@@ -53,7 +53,13 @@ export class FileReferenceHoverProvider implements vscode.HoverProvider {
       markdown.appendMarkdown(`Path: \`${result.relativePath}\`\n\n`);
       markdown.appendMarkdown(`Lines: ${result.lineCount}\n\n`);
 
-      if (!result.canParse) {
+      if (result.analysisStatus === 'too-large') {
+        markdown.appendMarkdown('Waypoint resolved this file, but it is too large to analyze.');
+
+        return new vscode.Hover(markdown);
+      }
+
+      if (result.analysisStatus === 'unsupported') {
         markdown.appendMarkdown('Waypoint resolved this file, but it is not a JavaScript or TypeScript source file.');
 
         return new vscode.Hover(markdown);

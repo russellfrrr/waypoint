@@ -9,7 +9,7 @@ export const formatAnalysisResult = (result: FileAnalysisResult): string => {
 		`Relative Path: ${result.relativePath}`,
 		`Language: ${result.languageId}`,
 		`Lines: ${result.lineCount}`,
-		`Parseable: ${result.canParse ? 'Yes' : 'No'}`,
+		`Analysis Status: ${result.analysisStatus}`,
 		'',
 		'Imports:',
 		...formatList(result.imports),

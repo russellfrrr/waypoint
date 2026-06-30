@@ -3,6 +3,8 @@ export type ExportedDeclaration = {
   kind: string;
 }
 
+export type AnalysisStatus = 'parsed' | 'unsupported' | 'too-large';
+
 export type FileAnalysisResult = {
   fileName: string;
   filePath: string;
@@ -11,5 +13,5 @@ export type FileAnalysisResult = {
   lineCount: number;
   imports: string[];
   exports: ExportedDeclaration[];
-  canParse: boolean;
+  analysisStatus: AnalysisStatus;
 };

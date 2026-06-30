@@ -5,6 +5,8 @@ import * as vscode from 'vscode';
 import { FileAnalysisResult } from '../types';
 import { getWorkspaceRelativePath } from '../utils/pathUtils';
 
+const maxAnalyzableFileSizeBytes = 500 * 1024;
+
 
 export class FileAnalyzer {
   private readonly project = new Project();
@@ -14,9 +16,24 @@ export class FileAnalyzer {
   }
 
   public analyzeFile(filePath: string): FileAnalysisResult {
+    const stats = fs.statSync(filePath);
+    const languageId = getLanguageIdFromFilePath(filePath);
+
+    if (stats.size > maxAnalyzableFileSizeBytes) {
+      return {
+        fileName: path.basename(filePath),
+        filePath,
+        relativePath: getWorkspaceRelativePath(filePath),
+        languageId,
+        lineCount: 0,
+        imports: [],
+        exports: [],
+        analysisStatus: 'too-large',
+      };
+    }
+
     const text = fs.readFileSync(filePath, 'utf8');
     const lineCount = text.split(/\r?\n/).length;
-    const languageId = getLanguageIdFromFilePath(filePath);
 
     return this.analyzeText(filePath, text, languageId, lineCount);
   }
@@ -36,7 +53,7 @@ export class FileAnalyzer {
         lineCount,
         imports: [],
         exports: [],
-        canParse: false,
+        analysisStatus: 'unsupported',
       };
     }
     
@@ -59,7 +76,7 @@ export class FileAnalyzer {
           kind: declaration ? getDeclarationKind(declaration) : 'unknown',
         };
       }),
-      canParse: true,
+      analysisStatus: 'parsed',
     };
   }
 }
