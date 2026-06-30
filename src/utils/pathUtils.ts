@@ -7,11 +7,19 @@ const supportedExtensions = [
   '.tsx', 
   '.js', 
   '.jsx',
+  '.mts',
+  '.cts',
+  '.mjs',
+  '.cjs',
   '.json',
   '.css',
   '.scss',
   '.svg',
   '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.webp',
 ];
 
 export const resolveFileReference = (

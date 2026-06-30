@@ -84,11 +84,11 @@ export class FileAnalyzer {
 const getLanguageIdFromFilePath = (filePath: string): string => {
   const extension = path.extname(filePath);
 
-  if (extension === '.ts' || extension === '.tsx') {
+  if (extension === '.ts' || extension === '.tsx' || extension === '.mts' || extension === '.cts') {
     return 'typescript';
   }
 
-  if (extension === '.js' || extension === '.jsx') {
+  if (extension === '.js' || extension === '.jsx' || extension === '.mjs' || extension === '.cjs') {
     return 'javascript';
   }
 
@@ -114,7 +114,7 @@ const getLanguageIdFromFilePath = (filePath: string): string => {
 const canParseWithTypeScript = (filePath: string): boolean => {
   const extension = path.extname(filePath);
 
-  return ['.ts', '.tsx', '.js', '.jsx'].includes(extension);
+  return ['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts', '.mjs', '.cjs'].includes(extension);
 };
 
 const getDeclarationKind = (node: Node): string => {
