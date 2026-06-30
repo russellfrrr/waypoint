@@ -21,6 +21,10 @@
       {
         "command": "waypoint.analyzeCurrentFile",
         "title": "Waypoint: Analyze Current File"
+      },
+      {
+        "command": "waypoint.openFile",
+        "title": "Waypoint: Open File"
       }
     ]
   },

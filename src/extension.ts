@@ -12,11 +12,13 @@ export const activate = (context: vscode.ExtensionContext) => {
 		[
 			{ language: 'typescript', scheme: 'file' },
 			{ language: 'javascript', scheme: 'file' },
+			{ language: 'typescriptreact', scheme: 'file' },
+			{ language: 'javascriptreact', scheme: 'file' },
 		],
 		new FileReferenceHoverProvider(analyzer)
 	);
 
-	const disposable = vscode.commands.registerCommand('waypoint.analyzeCurrentFile', () => {
+	const analyzeCurrentFileCommand = vscode.commands.registerCommand('waypoint.analyzeCurrentFile', () => {
 		const editor = vscode.window.activeTextEditor;
 
 		if (!editor) {
@@ -34,7 +36,15 @@ export const activate = (context: vscode.ExtensionContext) => {
 		vscode.window.showInformationMessage(`Waypoint analyzed ${result.fileName}.`);
 	});
 
-	context.subscriptions.push(disposable, outputChannel, hoverProvider);
+	const openFileCommand = vscode.commands.registerCommand(
+		'waypoint.openFile',
+		async (filePath: string) => {
+			const document = await vscode.workspace.openTextDocument(filePath);
+			await vscode.window.showTextDocument(document);
+		}
+	);
+
+	context.subscriptions.push(analyzeCurrentFileCommand, openFileCommand, outputChannel, hoverProvider);
 };
 
 export const deactivate = () => {};

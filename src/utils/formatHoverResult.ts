@@ -6,10 +6,12 @@ export const formatResolvedHoverResult = (
   result: FileAnalysisResult
 ): vscode.MarkdownString => {
   const markdown = new vscode.MarkdownString();
+  markdown.isTrusted = true;
 
   markdown.appendMarkdown('**Waypoint File Reference**\n\n');
   markdown.appendMarkdown(`\`${fileReference}\` -> \`${result.fileName}\`\n\n`);
   markdown.appendMarkdown(`Path: \`${result.relativePath}\`\n\n`);
+  markdown.appendMarkdown(`[Open referenced file](command:waypoint.openFile?${encodeCommandArgument(result.filePath)})\n\n`);
   markdown.appendMarkdown(`Lines: ${result.lineCount}\n\n`);
 
   if (result.analysisStatus === 'too-large') {
@@ -38,6 +40,7 @@ export const formatUnresolvedHoverResult = (
   fileReference: string
 ): vscode.MarkdownString => {
   const markdown = new vscode.MarkdownString();
+  markdown.isTrusted = true;
 
   markdown.appendMarkdown('**Waypoint File Reference**\n\n');
   markdown.appendMarkdown(`\`${fileReference}\`\n\n`);
@@ -56,6 +59,10 @@ export const formatErrorHoverResult = (
   markdown.appendMarkdown('Could not analyze this file.');
 
   return markdown;
+};
+
+const encodeCommandArgument = (value: string): string => {
+  return encodeURIComponent(JSON.stringify(value));
 };
 
 const formatList = (items: string[]): string[] => {
