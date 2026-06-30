@@ -10,6 +10,8 @@ export const formatAnalysisResult = (result: FileAnalysisResult): string => {
 		`Language: ${result.languageId}`,
 		`Lines: ${result.lineCount}`,
 		`Status: ${result.analysisStatus}`,
+		`Incoming Dependents: ${result.incomingDependents.length}`,
+		`Impact: ${formatImpactLevel(result.impactLevel)}`,
 		'',
 		'Imports',
 		'-------',
@@ -41,4 +43,16 @@ const formatExportList = (items: FileAnalysisResult['exports']): string[] => {
 	}
 
 	return items.map((item) => `- ${item.name} (${item.kind})`);
+};
+
+const formatImpactLevel = (impactLevel: FileAnalysisResult['impactLevel']): string => {
+	if (impactLevel === 'high') {
+		return 'High';
+	}
+
+	if (impactLevel === 'medium') {
+		return 'Medium';
+	}
+
+	return 'Low';
 };

@@ -13,6 +13,8 @@ export const formatResolvedHoverResult = (
   markdown.appendMarkdown(`Path: \`${result.relativePath}\`\n\n`);
   markdown.appendMarkdown(`[Open referenced file](command:waypoint.openFile?${encodeCommandArgument(result.filePath)})\n\n`);
   markdown.appendMarkdown(`Lines: ${result.lineCount}\n\n`);
+  markdown.appendMarkdown(`Incoming Dependents: ${result.incomingDependents.length}\n\n`);
+  markdown.appendMarkdown(`Impact: ${formatImpactLevel(result.impactLevel)}\n\n`);
 
   if (result.analysisStatus === 'too-large') {
     markdown.appendMarkdown('Waypoint resolved this file, but it is too large to analyze.');
@@ -83,4 +85,16 @@ const formatExportList = (items: FileAnalysisResult['exports']): string[] => {
   }
 
   return items.map((item) => `- ${item.name} (${item.kind})`);
+};
+
+const formatImpactLevel = (impactLevel: FileAnalysisResult['impactLevel']): string => {
+	if (impactLevel === 'high') {
+		return 'High';
+	}
+
+	if (impactLevel === 'medium') {
+		return 'Medium';
+	}
+
+	return 'Low';
 };

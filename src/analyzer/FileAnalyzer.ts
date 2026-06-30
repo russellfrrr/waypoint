@@ -33,6 +33,7 @@ export class FileAnalyzer {
         imports: [],
         exports: [],
         incomingDependents,
+        impactLevel: getImpactLevel(incomingDependents.length),
         analysisStatus: 'too-large',
       };
     }
@@ -61,6 +62,7 @@ export class FileAnalyzer {
         imports: [],
         exports: [],
         incomingDependents,
+        impactLevel: getImpactLevel(incomingDependents.length),
         analysisStatus: 'unsupported',
       };
     }
@@ -85,6 +87,7 @@ export class FileAnalyzer {
         };
       }),
       incomingDependents,
+      impactLevel: getImpactLevel(incomingDependents.length),
       analysisStatus: 'parsed',
     };
   }
@@ -152,4 +155,16 @@ const getDeclarationKind = (node: Node): string => {
   }
 
   return node.getKindName();
+};
+
+const getImpactLevel = (incomingDependentCount: number): 'low' | 'medium' | 'high' => {
+	if (incomingDependentCount >= 10) {
+		return 'high';
+	}
+
+	if (incomingDependentCount >= 3) {
+		return 'medium';
+	}
+
+	return 'low';
 };

@@ -1,9 +1,10 @@
 export type ExportedDeclaration = {
   name: string;
   kind: string;
-}
+};
 
 export type AnalysisStatus = 'parsed' | 'unsupported' | 'too-large';
+export type ImpactLevel = 'low' | 'medium' | 'high';
 
 export type FileAnalysisResult = {
   fileName: string;
@@ -14,5 +15,6 @@ export type FileAnalysisResult = {
   imports: string[];
   exports: ExportedDeclaration[];
   incomingDependents: string[];
+  impactLevel: ImpactLevel;
   analysisStatus: AnalysisStatus;
 };
