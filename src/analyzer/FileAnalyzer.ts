@@ -4,22 +4,26 @@ import { Project, Node } from 'ts-morph';
 import * as vscode from 'vscode';
 import { FileAnalysisResult } from '../types';
 import { getWorkspaceRelativePath } from '../utils/pathUtils';
+import { WorkspaceDependencyAnalyzer } from './WorkspaceDependencyAnalyzer';
 
 const maxAnalyzableFileSizeBytes = 500 * 1024;
 
 
 export class FileAnalyzer {
   private readonly project = new Project();
+  private readonly workspaceDependencyAnalyzer = new WorkspaceDependencyAnalyzer();
 
-  public analyze(document: vscode.TextDocument): FileAnalysisResult {
+  public async analyze(document: vscode.TextDocument): Promise<FileAnalysisResult> {
     return this.analyzeText(document.fileName, document.getText(), document.languageId, document.lineCount);
   }
 
-  public analyzeFile(filePath: string): FileAnalysisResult {
+  public async analyzeFile(filePath: string): Promise<FileAnalysisResult> {
     const stats = fs.statSync(filePath);
     const languageId = getLanguageIdFromFilePath(filePath);
 
     if (stats.size > maxAnalyzableFileSizeBytes) {
+      const incomingDependents = await this.workspaceDependencyAnalyzer.findIncomingDependents(filePath);
+
       return {
         fileName: path.basename(filePath),
         filePath,
@@ -28,6 +32,7 @@ export class FileAnalyzer {
         lineCount: 0,
         imports: [],
         exports: [],
+        incomingDependents,
         analysisStatus: 'too-large',
       };
     }
@@ -38,12 +43,14 @@ export class FileAnalyzer {
     return this.analyzeText(filePath, text, languageId, lineCount);
   }
 
-  private analyzeText(
+  private async analyzeText(
     filePath: string,
     text: string,
     languageId: string,
     lineCount: number
-  ): FileAnalysisResult {
+  ): Promise<FileAnalysisResult> {
+    const incomingDependents = await this.workspaceDependencyAnalyzer.findIncomingDependents(filePath);
+
     if (!canParseWithTypeScript(filePath)) {
       return {
         fileName: path.basename(filePath),
@@ -53,6 +60,7 @@ export class FileAnalyzer {
         lineCount,
         imports: [],
         exports: [],
+        incomingDependents,
         analysisStatus: 'unsupported',
       };
     }
@@ -76,6 +84,7 @@ export class FileAnalyzer {
           kind: declaration ? getDeclarationKind(declaration) : 'unknown',
         };
       }),
+      incomingDependents,
       analysisStatus: 'parsed',
     };
   }

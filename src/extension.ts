@@ -18,7 +18,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 		new FileReferenceHoverProvider(analyzer)
 	);
 
-	const analyzeCurrentFileCommand = vscode.commands.registerCommand('waypoint.analyzeCurrentFile', () => {
+	const analyzeCurrentFileCommand = vscode.commands.registerCommand('waypoint.analyzeCurrentFile', async () => {
 		const editor = vscode.window.activeTextEditor;
 
 		if (!editor) {
@@ -26,7 +26,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 			return;
 		}
 
-		const result = analyzer.analyze(editor.document);
+		const result = await analyzer.analyze(editor.document);
 		const output = formatAnalysisResult(result);
 
 		outputChannel.clear();

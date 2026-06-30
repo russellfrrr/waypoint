@@ -32,6 +32,10 @@ export const formatResolvedHoverResult = (
 
   markdown.appendMarkdown('**Exports**\n\n');
   markdown.appendMarkdown(formatExportList(result.exports).join('\n'));
+  markdown.appendMarkdown('\n\n');
+
+  markdown.appendMarkdown('**Imported By**\n\n');
+  markdown.appendMarkdown(formatList(result.incomingDependents).join('\n'));
 
   return markdown;
 };

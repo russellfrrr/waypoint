@@ -12,10 +12,10 @@ import { getFileReferenceAtPosition } from '../utils/fileReferenceUtils';
 export class FileReferenceHoverProvider implements vscode.HoverProvider {
   public constructor(private readonly analyzer: FileAnalyzer) {}
 
-  public provideHover(
+  public async provideHover(
     document: vscode.TextDocument,
     position: vscode.Position
-  ): vscode.ProviderResult<vscode.Hover> {
+  ): Promise<vscode.Hover | undefined> {
     const fileReference = getFileReferenceAtPosition(document, position);
 
     if (!fileReference) {
@@ -33,7 +33,7 @@ export class FileReferenceHoverProvider implements vscode.HoverProvider {
     }
 
     try {
-      const result = this.analyzer.analyzeFile(resolvedPath);
+      const result = await this.analyzer.analyzeFile(resolvedPath);
 
       return new vscode.Hover(formatResolvedHoverResult(fileReference.value, result));
     } catch {

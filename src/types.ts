@@ -13,5 +13,6 @@ export type FileAnalysisResult = {
   lineCount: number;
   imports: string[];
   exports: ExportedDeclaration[];
+  incomingDependents: string[];
   analysisStatus: AnalysisStatus;
 };

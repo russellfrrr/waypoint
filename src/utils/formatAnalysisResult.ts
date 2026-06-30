@@ -18,6 +18,10 @@ export const formatAnalysisResult = (result: FileAnalysisResult): string => {
 		'Exports',
 		'-------',
 		...formatExportList(result.exports),
+		'',
+		'Imported By',
+		'-----------',
+		...formatList(result.incomingDependents),
 	];
 
 	return lines.join('\n');
