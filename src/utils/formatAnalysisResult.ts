@@ -3,18 +3,20 @@ import { FileAnalysisResult } from '../types';
 export const formatAnalysisResult = (result: FileAnalysisResult): string => {
 	const lines = [
 		'Waypoint Analysis',
+		'=================',
 		'',
 		`File: ${result.fileName}`,
-		`Path: ${result.filePath}`,
-		`Relative Path: ${result.relativePath}`,
+		`Path: ${result.relativePath}`,
 		`Language: ${result.languageId}`,
 		`Lines: ${result.lineCount}`,
-		`Analysis Status: ${result.analysisStatus}`,
+		`Status: ${result.analysisStatus}`,
 		'',
-		'Imports:',
+		'Imports',
+		'-------',
 		...formatList(result.imports),
 		'',
-		'Exports:',
+		'Exports',
+		'-------',
 		...formatExportList(result.exports),
 	];
 
@@ -29,8 +31,8 @@ const formatList = (items: string[]): string[] => {
 	return items.map((item) => `- ${item}`);
 };
 
-const formatExportList = (items: FileAnalysisResult['exports']):string [] => {
-	if (items.length ===0) {
+const formatExportList = (items: FileAnalysisResult['exports']): string[] => {
+	if (items.length === 0) {
 		return ['- None'];
 	}
 
