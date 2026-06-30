@@ -7,7 +7,7 @@ import {
   formatResolvedHoverResult,
   formatUnresolvedHoverResult,
 } from '../utils/formatHoverResult';
-
+import { getFileReferenceAtPosition } from '../utils/fileReferenceUtils';
 
 export class FileReferenceHoverProvider implements vscode.HoverProvider {
   public constructor(private readonly analyzer: FileAnalyzer) {}
@@ -16,39 +16,28 @@ export class FileReferenceHoverProvider implements vscode.HoverProvider {
     document: vscode.TextDocument,
     position: vscode.Position
   ): vscode.ProviderResult<vscode.Hover> {
-    const range = document.getWordRangeAtPosition(position, /['"][^'"]+['"]/);
+    const fileReference = getFileReferenceAtPosition(document, position);
 
-    if (!range) {
+    if (!fileReference) {
       return undefined;
     }
 
-    const text = document.getText(range);
-    const fileReference = text.slice(1, -1);
-
-    if (!isLikelyFileReference(fileReference)) {
+    if (!isImportOrExportReference(document, fileReference.range)) {
       return undefined;
     }
 
-    if (!isImportOrExportReference(document, range)) {
-      return undefined;
-    }
-
-    const resolvedPath = resolveFileReference(document.fileName, fileReference);
+    const resolvedPath = resolveFileReference(document.fileName, fileReference.value);
 
     if (!resolvedPath) {
-      return new vscode.Hover(formatUnresolvedHoverResult(fileReference));
+      return new vscode.Hover(formatUnresolvedHoverResult(fileReference.value));
     }
 
     try {
       const result = this.analyzer.analyzeFile(resolvedPath);
 
-      return new vscode.Hover(formatResolvedHoverResult(fileReference, result));
+      return new vscode.Hover(formatResolvedHoverResult(fileReference.value, result));
     } catch {
-      return new vscode.Hover(formatErrorHoverResult(fileReference));
+      return new vscode.Hover(formatErrorHoverResult(fileReference.value));
     }
   }
 }
-
-const isLikelyFileReference = (value: string): boolean => {
-  return value.startsWith('./') || value.startsWith('../');
-};
