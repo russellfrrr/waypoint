@@ -26,7 +26,25 @@
         "command": "waypoint.openFile",
         "title": "Waypoint: Open File"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "waypoint",
+          "title": "Waypoint",
+          "icon": "$(compass)"
+        }
+      ]
+    },
+    "views": {
+      "waypoint": [
+        {
+          "id": "waypoint.deepAnalysis",
+          "name": "Deep Analysis",
+          "icon": "$(graph)"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",

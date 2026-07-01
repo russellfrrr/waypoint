@@ -2,11 +2,16 @@ import * as vscode from 'vscode';
 import { FileAnalyzer } from './analyzer/FileAnalyzer';
 import { formatAnalysisResult } from './utils/formatAnalysisResult';
 import { FileReferenceHoverProvider } from './hover/FileReferenceHoverProvider';
+import { WaypointViewProvider } from './views/WaypointViewProvider';
 
 export const activate = (context: vscode.ExtensionContext) => {
 	console.log('Waypoint is now active.');
 
 	const analyzer = new FileAnalyzer();
+	const waypointViewProvider = new WaypointViewProvider(analyzer);
+	const waypointTreeView = vscode.window.createTreeView('waypoint.deepAnalysis', {
+		treeDataProvider: waypointViewProvider,
+	});
 	const outputChannel = vscode.window.createOutputChannel('Waypoint');
 	const hoverProvider = vscode.languages.registerHoverProvider(
 		[
@@ -44,7 +49,20 @@ export const activate = (context: vscode.ExtensionContext) => {
 		}
 	);
 
-	context.subscriptions.push(analyzeCurrentFileCommand, openFileCommand, outputChannel, hoverProvider);
+	const activeEditorListener = vscode.window.onDidChangeActiveTextEditor(() => {
+		void waypointViewProvider.refresh();
+	});
+
+	void waypointViewProvider.refresh();
+
+	context.subscriptions.push(
+		analyzeCurrentFileCommand,
+		openFileCommand,
+		outputChannel,
+		hoverProvider,
+		waypointTreeView,
+		activeEditorListener
+	);
 };
 
 export const deactivate = () => {};
