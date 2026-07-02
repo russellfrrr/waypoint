@@ -25,6 +25,11 @@
       {
         "command": "waypoint.openFile",
         "title": "Waypoint: Open File"
+      },
+      {
+        "command": "waypoint.refreshDeepAnalysis",
+        "title": "Waypoint: Refresh Deep Analysis",
+        "icon": "$(refresh)"
       }
     ],
     "viewsContainers": {
@@ -42,6 +47,15 @@
           "id": "waypoint.deepAnalysis",
           "name": "Deep Analysis",
           "icon": "$(graph)"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "waypoint.refreshDeepAnalysis",
+          "when": "view == waypoint.deepAnalysis",
+          "group": "navigation"
         }
       ]
     }

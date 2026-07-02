@@ -49,6 +49,13 @@ export const activate = (context: vscode.ExtensionContext) => {
 		}
 	);
 
+	const refreshDeepAnalysisCommand = vscode.commands.registerCommand(
+		'waypoint.refreshDeepAnalysis',
+		() => {
+			void waypointViewProvider.refresh();
+		}
+	);
+
 	const activeEditorListener = vscode.window.onDidChangeActiveTextEditor(() => {
 		void waypointViewProvider.refresh();
 	});
@@ -58,6 +65,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 	context.subscriptions.push(
 		analyzeCurrentFileCommand,
 		openFileCommand,
+		refreshDeepAnalysisCommand,
 		outputChannel,
 		hoverProvider,
 		waypointTreeView,
