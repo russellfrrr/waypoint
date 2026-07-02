@@ -27,7 +27,7 @@ export const formatAnalysisResult = (result: FileAnalysisResult): string => {
 		'',
 		'Imported By',
 		'-----------',
-		...formatList(staticAnalysis.incomingDependents),
+		...formatFileReferenceList(staticAnalysis.incomingDependents),
 		'',
 		'AI Insight',
 		'----------',
@@ -65,4 +65,14 @@ const formatImpactLevel = (
 	}
 
 	return 'Low';
+};
+
+const formatFileReferenceList = (
+  items: FileAnalysisResult['staticAnalysis']['incomingDependents']
+): string[] => {
+  if (items.length === 0) {
+    return ['- None'];
+  }
+
+  return items.map((item) => `- ${item.relativePath}`);
 };

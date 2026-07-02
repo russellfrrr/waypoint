@@ -3,6 +3,7 @@ import * as path from 'path';
 import { Project } from 'ts-morph';
 import * as vscode from 'vscode';
 import { getWorkspaceRelativePath, resolveFileReference } from '../utils/pathUtils';
+import { FileReference } from '../types';
 
 const maxWorkspaceFilesToScan = 500;
 const maxDependentsToReturn = 20;
@@ -10,7 +11,7 @@ const maxDependentsToReturn = 20;
 export class WorkspaceDependencyAnalyzer {
   private readonly project = new Project();
 
-  public async findIncomingDependents(targetFilePath: string): Promise<string[]> {
+  public async findIncomingDependents(targetFilePath: string): Promise<FileReference[]> {
     const files = await vscode.workspace.findFiles(
       '**/*.{ts,tsx,js,jsx,mts,cts,mjs,cjs}',
       '**/{node_modules,dist,build,out,.git}/**',
@@ -18,7 +19,7 @@ export class WorkspaceDependencyAnalyzer {
     );
 
     const normalizedTargetPath = normalizePath(targetFilePath);
-    const dependents: string[] = [];
+    const dependents: FileReference[] = [];
 
     for (const file of files) {
       const currentFilePath = file.fsPath;
@@ -28,7 +29,10 @@ export class WorkspaceDependencyAnalyzer {
       }
 
       if (this.importsTargetFile(currentFilePath, normalizedTargetPath)) {
-        dependents.push(getWorkspaceRelativePath(currentFilePath));
+        dependents.push({
+          filePath: currentFilePath,
+          relativePath: getWorkspaceRelativePath(currentFilePath),
+        });
       }
 
       if (dependents.length >= maxDependentsToReturn) {

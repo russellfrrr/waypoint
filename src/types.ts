@@ -3,6 +3,11 @@ export type ExportedDeclaration = {
   kind: string;
 };
 
+export type FileReference = {
+  filePath: string;
+  relativePath: string;
+};
+
 export type AnalysisStatus = 'parsed' | 'unsupported' | 'too-large';
 export type ImpactLevel = 'low' | 'medium' | 'high';
 
@@ -14,7 +19,7 @@ export type StaticFileAnalysis = {
   lineCount: number;
   imports: string[];
   exports: ExportedDeclaration[];
-  incomingDependents: string[];
+  incomingDependents: FileReference[];
   impactLevel: ImpactLevel;
   analysisStatus: AnalysisStatus;
 };

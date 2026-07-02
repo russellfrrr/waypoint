@@ -115,7 +115,7 @@ const createAnalysisTreeItems = (result: FileAnalysisResult): WaypointTreeItem[]
     },
     {
       label: 'Imported By',
-      children: formatStringItems(staticAnalysis.incomingDependents),
+      children: formatFileReferenceItems(staticAnalysis.incomingDependents),
     },
     {
       label: 'AI Insight',
@@ -157,4 +157,17 @@ const formatImpactLevel = (
   }
 
   return 'Low';
+};
+
+const formatFileReferenceItems = (
+  items: FileAnalysisResult['staticAnalysis']['incomingDependents']
+): WaypointTreeItem[] => {
+  if (items.length === 0) {
+    return [{ label: 'None' }];
+  }
+
+  return items.map((item) => ({
+    label: item.relativePath,
+    filePath: item.filePath,
+  }));
 };
