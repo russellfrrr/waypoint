@@ -5,6 +5,7 @@ import { FileAnalysisResult } from '../types';
 type WaypointTreeItem = {
   label: string;
   value?: string;
+  filePath?: string;
   children?: WaypointTreeItem[];
 };
 
@@ -54,6 +55,14 @@ export class WaypointViewProvider implements vscode.TreeDataProvider<WaypointTre
 
     treeItem.tooltip = label;
 
+    if (item.filePath) {
+      treeItem.command = {
+        command: 'waypoint.openFile',
+        title: 'Open File',
+        arguments: [item.filePath],
+      };
+    }
+
     return treeItem;
   }
 
@@ -82,7 +91,7 @@ const createAnalysisTreeItems = (result: FileAnalysisResult): WaypointTreeItem[]
       label: 'File',
       children: [
         { label: 'Current file', value: staticAnalysis.fileName },
-        { label: 'Path', value: staticAnalysis.relativePath },
+        { label: 'Path', value: staticAnalysis.relativePath, filePath: staticAnalysis.filePath },
         { label: 'Lines', value: String(staticAnalysis.lineCount) },
         { label: 'Status', value: staticAnalysis.analysisStatus },
       ],
