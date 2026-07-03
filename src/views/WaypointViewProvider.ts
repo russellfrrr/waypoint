@@ -101,6 +101,7 @@ const createAnalysisTreeItems = (result: FileAnalysisResult): WaypointTreeItem[]
       children: [
         { label: 'Impact', value: formatImpactLevel(staticAnalysis.impactLevel) },
         { label: 'Imports', value: String(staticAnalysis.imports.length) },
+        { label: 'Depends on', value: `${staticAnalysis.outgoingDependencies.length} files` },
         { label: 'Exports', value: String(staticAnalysis.exports.length) },
         { label: 'Used by', value: `${staticAnalysis.incomingDependents.length} files` },
       ],
@@ -108,6 +109,10 @@ const createAnalysisTreeItems = (result: FileAnalysisResult): WaypointTreeItem[]
     {
       label: 'Imports',
       children: formatStringItems(staticAnalysis.imports),
+    },
+    {
+      label: 'Depends On',
+      children: formatFileReferenceItems(staticAnalysis.outgoingDependencies),
     },
     {
       label: 'Exports',

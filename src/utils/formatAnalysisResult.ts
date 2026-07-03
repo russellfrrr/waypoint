@@ -1,4 +1,4 @@
-import { FileAnalysisResult } from '../types';
+import { FileAnalysisResult, FileReference } from '../types';
 
 export const formatAnalysisResult = (result: FileAnalysisResult): string => {
 	const staticAnalysis = result.staticAnalysis;
@@ -20,6 +20,10 @@ export const formatAnalysisResult = (result: FileAnalysisResult): string => {
 		'Imports',
 		'-------',
 		...formatList(staticAnalysis.imports),
+		'',
+		'Depends On',
+		'----------',
+		...formatFileReferenceList(staticAnalysis.outgoingDependencies),
 		'',
 		'Exports',
 		'-------',
@@ -67,9 +71,7 @@ const formatImpactLevel = (
 	return 'Low';
 };
 
-const formatFileReferenceList = (
-  items: FileAnalysisResult['staticAnalysis']['incomingDependents']
-): string[] => {
+const formatFileReferenceList = (items: FileReference[]): string[] => {
   if (items.length === 0) {
     return ['- None'];
   }

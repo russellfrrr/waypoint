@@ -1,9 +1,9 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { Project, Node } from 'ts-morph';
+import { Project, Node, SourceFile } from 'ts-morph';
 import * as vscode from 'vscode';
 import { FileAnalysisResult } from '../types';
-import { getWorkspaceRelativePath } from '../utils/pathUtils';
+import { getWorkspaceRelativePath, resolveFileReference } from '../utils/pathUtils';
 import { WorkspaceDependencyAnalyzer } from './WorkspaceDependencyAnalyzer';
 
 const maxAnalyzableFileSizeBytes = 500 * 1024;
@@ -32,6 +32,7 @@ export class FileAnalyzer {
           languageId,
           lineCount: 0,
           imports: [],
+          outgoingDependencies: [],
           exports: [],
           incomingDependents,
           impactLevel: getImpactLevel(incomingDependents.length),
@@ -63,6 +64,7 @@ export class FileAnalyzer {
           languageId,
           lineCount,
           imports: [],
+          outgoingDependencies: [],
           exports: [],
           incomingDependents,
           impactLevel: getImpactLevel(incomingDependents.length),
@@ -72,6 +74,7 @@ export class FileAnalyzer {
     }
     
     const sourceFile = this.project.createSourceFile(filePath, text, { overwrite: true });
+    const imports = getImportPaths(sourceFile);
 
     return {
       staticAnalysis: {
@@ -80,9 +83,8 @@ export class FileAnalyzer {
         relativePath: getWorkspaceRelativePath(sourceFile.getFilePath()),
         languageId,
         lineCount,
-        imports: sourceFile.getImportDeclarations().map((importDeclaration) =>
-          importDeclaration.getModuleSpecifierValue()
-        ),
+        imports,
+        outgoingDependencies: getOutgoingDependencies(imports, sourceFile.getFilePath()),
         exports: Array.from(sourceFile.getExportedDeclarations()).map(([name, declarations]) => {
           const declaration = declarations[0];
 
@@ -133,6 +135,30 @@ const canParseWithTypeScript = (filePath: string): boolean => {
   const extension = path.extname(filePath);
 
   return ['.ts', '.tsx', '.js', '.jsx', '.mts', '.cts', '.mjs', '.cjs'].includes(extension);
+};
+
+const getImportPaths = (sourceFile: SourceFile): string[] => {
+  return sourceFile.getImportDeclarations().map((importDeclaration) =>
+    importDeclaration.getModuleSpecifierValue()
+  );
+};
+
+const getOutgoingDependencies = (
+  imports: string[],
+  currentFilePath: string
+): FileAnalysisResult['staticAnalysis']['outgoingDependencies'] => {
+  return imports
+    .filter((importPath) => isRelativeImport(importPath))
+    .map((importPath) => resolveFileReference(currentFilePath, importPath))
+    .filter((filePath): filePath is string => Boolean(filePath))
+    .map((filePath) => ({
+      filePath,
+      relativePath: getWorkspaceRelativePath(filePath),
+    }));
+};
+
+const isRelativeImport = (value: string): boolean => {
+  return value.startsWith('./') || value.startsWith('../');
 };
 
 const getDeclarationKind = (node: Node): string => {

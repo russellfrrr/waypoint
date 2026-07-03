@@ -88,6 +88,9 @@ const formatImportExportCounts = (
   staticAnalysis: FileAnalysisResult['staticAnalysis']
 ): string => {
   return `${formatCount(staticAnalysis.imports.length, 'import')}, ${formatCount(
+    staticAnalysis.outgoingDependencies.length,
+    'resolved dependency'
+  )}, ${formatCount(
     staticAnalysis.exports.length,
     'export'
   )}`;

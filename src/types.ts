@@ -18,6 +18,7 @@ export type StaticFileAnalysis = {
   languageId: string;
   lineCount: number;
   imports: string[];
+  outgoingDependencies: FileReference[];
   exports: ExportedDeclaration[];
   incomingDependents: FileReference[];
   impactLevel: ImpactLevel;
