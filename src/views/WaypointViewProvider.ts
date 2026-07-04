@@ -2,10 +2,14 @@ import * as vscode from 'vscode';
 import { FileAnalyzer } from '../analyzer/FileAnalyzer';
 import { FileAnalysisResult, FileReference } from '../types';
 
+type WaypointTreeItemKind = 'section' | 'row' | 'file';
+
 type WaypointTreeItem = {
   label: string;
   value?: string;
   filePath?: string;
+  icon?: vscode.ThemeIcon;
+  kind?: WaypointTreeItemKind;
   children?: WaypointTreeItem[];
 };
 
@@ -43,17 +47,18 @@ export class WaypointViewProvider implements vscode.TreeDataProvider<WaypointTre
   }
 
   public getTreeItem(item: WaypointTreeItem): vscode.TreeItem {
-    const hasChildren = Boolean(item.children?.length);
     const label = item.value ? `${item.label}: ${item.value}` : item.label;
+    const collapsibleState = item.kind === 'section'
+      ? vscode.TreeItemCollapsibleState.Expanded
+      : vscode.TreeItemCollapsibleState.None;
 
-    const treeItem = new vscode.TreeItem(
-      label,
-      hasChildren
-        ? vscode.TreeItemCollapsibleState.Expanded
-        : vscode.TreeItemCollapsibleState.None
-    );
+    const treeItem = new vscode.TreeItem(label, collapsibleState);
 
     treeItem.tooltip = label;
+
+    if (item.icon) {
+      treeItem.iconPath = item.icon;
+    }
 
     if (item.filePath) {
       treeItem.command = {
@@ -87,77 +92,101 @@ const createAnalysisTreeItems = (result: FileAnalysisResult): WaypointTreeItem[]
   const staticAnalysis = result.staticAnalysis;
 
   return [
-    {
-      label: 'File',
-      children: [
-        { label: 'Current file', value: staticAnalysis.fileName },
-        { label: 'Path', value: staticAnalysis.relativePath, filePath: staticAnalysis.filePath },
-        { label: 'Lines', value: String(staticAnalysis.lineCount) },
-        { label: 'Status', value: staticAnalysis.analysisStatus },
-      ],
-    },
-    {
-      label: 'Metrics',
-      children: [
-        { label: 'Impact', value: formatImpactLevel(staticAnalysis.impactLevel) },
-        { label: 'Imports', value: String(staticAnalysis.imports.length) },
-        { label: 'Depends on', value: `${staticAnalysis.outgoingDependencies.length} files` },
-        { label: 'Exports', value: String(staticAnalysis.exports.length) },
-        { label: 'Used by', value: `${staticAnalysis.incomingDependents.length} files` },
-      ],
-    },
-    {
-      label: 'Purpose',
-      children: [
-        { label: 'Likely purpose', value: staticAnalysis.purpose.summary },
-        { label: 'Confidence', value: formatConfidence(staticAnalysis.purpose.confidence) },
-        {
-          label: 'Evidence',
-          children: formatStringItems(staticAnalysis.purpose.evidence),
-        },
-      ],
-    },
-    {
-      label: 'Imports',
-      children: formatStringItems(staticAnalysis.imports),
-    },
-    {
-      label: 'Depends On',
-      children: formatFileReferenceItems(staticAnalysis.outgoingDependencies),
-    },
-    {
-      label: 'Exports',
-      children: formatExportItems(staticAnalysis.exports),
-    },
-    {
-      label: 'Imported By',
-      children: formatFileReferenceItems(staticAnalysis.incomingDependents),
-    },
-    {
-      label: 'AI Insight',
-      children: [{ label: 'Not available yet' }],
-    },
+    createSection('File', 'file', [
+      createFileRow('Current file', staticAnalysis.fileName, staticAnalysis.filePath),
+      createFileRow('Path', staticAnalysis.relativePath, staticAnalysis.filePath),
+      createRow('Lines', String(staticAnalysis.lineCount)),
+      createRow('Status', staticAnalysis.analysisStatus),
+    ]),
+    createSection('Metrics', getImpactIcon(staticAnalysis.impactLevel), [
+      createRow('Impact', formatImpactLevel(staticAnalysis.impactLevel)),
+      createRow('Imports', String(staticAnalysis.imports.length)),
+      createRow('Depends on', formatFileCount(staticAnalysis.outgoingDependencies.length)),
+      createRow('Exports', String(staticAnalysis.exports.length)),
+      createRow('Used by', formatFileCount(staticAnalysis.incomingDependents.length)),
+    ]),
+    createSection('Purpose', 'info', [
+      createRow('Likely purpose', staticAnalysis.purpose.summary),
+      createRow('Confidence', formatConfidence(staticAnalysis.purpose.confidence)),
+      ...formatEvidenceItems(staticAnalysis.purpose.evidence),
+    ]),
+    createSection('Imports', 'arrow-down', formatStringItems(staticAnalysis.imports)),
+    createSection('Depends On', 'references', formatFileReferenceItems(staticAnalysis.outgoingDependencies)),
+    createSection('Exports', 'symbol-key', formatExportItems(staticAnalysis.exports)),
+    createSection('Imported By', 'graph', formatFileReferenceItems(staticAnalysis.incomingDependents)),
+    createSection('AI Insight', 'sparkle', [
+      createRow('Status', 'Not available yet'),
+    ]),
   ];
+};
+
+const createSection = (
+  label: string,
+  icon: string,
+  children: WaypointTreeItem[]
+): WaypointTreeItem => {
+  return {
+    label,
+    icon: new vscode.ThemeIcon(icon),
+    kind: 'section',
+    children,
+  };
+};
+
+const createRow = (
+  label: string,
+  value: string
+): WaypointTreeItem => {
+  return {
+    label,
+    value,
+    kind: 'row',
+  };
+};
+
+const createFileRow = (
+  label: string,
+  value: string,
+  filePath: string
+): WaypointTreeItem => {
+  return {
+    label,
+    value,
+    filePath,
+    kind: 'file',
+  };
 };
 
 const formatStringItems = (items: string[]): WaypointTreeItem[] => {
   if (items.length === 0) {
-    return [{ label: 'None' }];
+    return [createRow('None', '')];
   }
 
-  return items.map((item) => ({ label: item }));
+  return items.map((item) => ({
+    label: item,
+    kind: 'row',
+  }));
+};
+
+const formatEvidenceItems = (items: string[]): WaypointTreeItem[] => {
+  if (items.length === 0) {
+    return [createRow('Evidence', 'None')];
+  }
+
+  return items.map((item) => createRow('Evidence', item));
 };
 
 const formatExportItems = (
   items: FileAnalysisResult['staticAnalysis']['exports']
 ): WaypointTreeItem[] => {
   if (items.length === 0) {
-    return [{ label: 'None' }];
+    return [createRow('None', '')];
   }
 
   return items.map((item) => ({
     label: item.name,
     value: item.kind,
+    kind: 'row',
   }));
 };
 
@@ -191,11 +220,30 @@ const formatConfidence = (
 
 const formatFileReferenceItems = (items: FileReference[]): WaypointTreeItem[] => {
   if (items.length === 0) {
-    return [{ label: 'None' }];
+    return [createRow('None', '')];
   }
 
   return items.map((item) => ({
     label: item.relativePath,
     filePath: item.filePath,
+    kind: 'file',
   }));
+};
+
+const formatFileCount = (count: number): string => {
+  return count === 1 ? '1 file' : `${count} files`;
+};
+
+const getImpactIcon = (
+  impactLevel: FileAnalysisResult['staticAnalysis']['impactLevel']
+): string => {
+  if (impactLevel === 'high') {
+    return 'warning';
+  }
+
+  if (impactLevel === 'medium') {
+    return 'graph';
+  }
+
+  return 'info';
 };
