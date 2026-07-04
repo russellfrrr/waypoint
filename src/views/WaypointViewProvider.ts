@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { FileAnalyzer } from '../analyzer/FileAnalyzer';
-import { FileAnalysisResult } from '../types';
+import { FileAnalysisResult, FileReference } from '../types';
 
 type WaypointTreeItem = {
   label: string;
@@ -107,6 +107,17 @@ const createAnalysisTreeItems = (result: FileAnalysisResult): WaypointTreeItem[]
       ],
     },
     {
+      label: 'Purpose',
+      children: [
+        { label: 'Likely purpose', value: staticAnalysis.purpose.summary },
+        { label: 'Confidence', value: formatConfidence(staticAnalysis.purpose.confidence) },
+        {
+          label: 'Evidence',
+          children: formatStringItems(staticAnalysis.purpose.evidence),
+        },
+      ],
+    },
+    {
       label: 'Imports',
       children: formatStringItems(staticAnalysis.imports),
     },
@@ -164,9 +175,21 @@ const formatImpactLevel = (
   return 'Low';
 };
 
-const formatFileReferenceItems = (
-  items: FileAnalysisResult['staticAnalysis']['incomingDependents']
-): WaypointTreeItem[] => {
+const formatConfidence = (
+  confidence: FileAnalysisResult['staticAnalysis']['purpose']['confidence']
+): string => {
+  if (confidence === 'high') {
+    return 'High';
+  }
+
+  if (confidence === 'medium') {
+    return 'Medium';
+  }
+
+  return 'Low';
+};
+
+const formatFileReferenceItems = (items: FileReference[]): WaypointTreeItem[] => {
   if (items.length === 0) {
     return [{ label: 'None' }];
   }

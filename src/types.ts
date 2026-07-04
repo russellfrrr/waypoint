@@ -8,6 +8,12 @@ export type FileReference = {
   relativePath: string;
 };
 
+export type FilePurpose = {
+  summary: string;
+  confidence: 'low' | 'medium' | 'high';
+  evidence: string[];
+};
+
 export type AnalysisStatus = 'parsed' | 'unsupported' | 'too-large';
 export type ImpactLevel = 'low' | 'medium' | 'high';
 
@@ -17,6 +23,7 @@ export type StaticFileAnalysis = {
   relativePath: string;
   languageId: string;
   lineCount: number;
+  purpose: FilePurpose;
   imports: string[];
   outgoingDependencies: FileReference[];
   exports: ExportedDeclaration[];

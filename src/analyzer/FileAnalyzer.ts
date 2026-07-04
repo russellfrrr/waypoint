@@ -5,6 +5,7 @@ import * as vscode from 'vscode';
 import { FileAnalysisResult } from '../types';
 import { getWorkspaceRelativePath, resolveFileReference } from '../utils/pathUtils';
 import { WorkspaceDependencyAnalyzer } from './WorkspaceDependencyAnalyzer';
+import { FilePurposeInferer } from './FilePurposeInferer';
 
 const maxAnalyzableFileSizeBytes = 500 * 1024;
 
@@ -12,6 +13,7 @@ const maxAnalyzableFileSizeBytes = 500 * 1024;
 export class FileAnalyzer {
   private readonly project = new Project();
   private readonly workspaceDependencyAnalyzer = new WorkspaceDependencyAnalyzer();
+  private readonly filePurposeInferer = new FilePurposeInferer();
 
   public async analyze(document: vscode.TextDocument): Promise<FileAnalysisResult> {
     return this.analyzeText(document.fileName, document.getText(), document.languageId, document.lineCount);
@@ -24,27 +26,36 @@ export class FileAnalyzer {
     if (stats.size > maxAnalyzableFileSizeBytes) {
       const incomingDependents = await this.workspaceDependencyAnalyzer.findIncomingDependents(filePath);
 
-      return {
-        staticAnalysis: {
-          fileName: path.basename(filePath),
-          filePath,
-          relativePath: getWorkspaceRelativePath(filePath),
-          languageId,
-          lineCount: 0,
-          imports: [],
-          outgoingDependencies: [],
-          exports: [],
-          incomingDependents,
-          impactLevel: getImpactLevel(incomingDependents.length),
-          analysisStatus: 'too-large',
-        },
-      };
+      return this.addPurpose({
+        fileName: path.basename(filePath),
+        filePath,
+        relativePath: getWorkspaceRelativePath(filePath),
+        languageId,
+        lineCount: 0,
+        imports: [],
+        outgoingDependencies: [],
+        exports: [],
+        incomingDependents,
+        impactLevel: getImpactLevel(incomingDependents.length),
+        analysisStatus: 'too-large',
+      });
     }
 
     const text = fs.readFileSync(filePath, 'utf8');
     const lineCount = text.split(/\r?\n/).length;
 
     return this.analyzeText(filePath, text, languageId, lineCount);
+  }
+
+  private addPurpose(
+    staticAnalysis: Omit<FileAnalysisResult['staticAnalysis'], 'purpose'>
+  ): FileAnalysisResult {
+    return {
+      staticAnalysis: {
+        ...staticAnalysis,
+        purpose: this.filePurposeInferer.infer(staticAnalysis),
+      },
+    };
   }
 
   private async analyzeText(
@@ -56,48 +67,44 @@ export class FileAnalyzer {
     const incomingDependents = await this.workspaceDependencyAnalyzer.findIncomingDependents(filePath);
 
     if (!canParseWithTypeScript(filePath)) {
-      return {
-        staticAnalysis: {
-          fileName: path.basename(filePath),
-          filePath,
-          relativePath: getWorkspaceRelativePath(filePath),
-          languageId,
-          lineCount,
-          imports: [],
-          outgoingDependencies: [],
-          exports: [],
-          incomingDependents,
-          impactLevel: getImpactLevel(incomingDependents.length),
-          analysisStatus: 'unsupported',
-        },
-      };
+      return this.addPurpose({
+        fileName: path.basename(filePath),
+        filePath,
+        relativePath: getWorkspaceRelativePath(filePath),
+        languageId,
+        lineCount,
+        imports: [],
+        outgoingDependencies: [],
+        exports: [],
+        incomingDependents,
+        impactLevel: getImpactLevel(incomingDependents.length),
+        analysisStatus: 'unsupported',
+      });
     }
     
     const sourceFile = this.project.createSourceFile(filePath, text, { overwrite: true });
     const imports = getImportPaths(sourceFile);
 
-    return {
-      staticAnalysis: {
-        fileName: path.basename(sourceFile.getFilePath()),
-        filePath: sourceFile.getFilePath(),
-        relativePath: getWorkspaceRelativePath(sourceFile.getFilePath()),
-        languageId,
-        lineCount,
-        imports,
-        outgoingDependencies: getOutgoingDependencies(imports, sourceFile.getFilePath()),
-        exports: Array.from(sourceFile.getExportedDeclarations()).map(([name, declarations]) => {
-          const declaration = declarations[0];
+    return this.addPurpose({
+      fileName: path.basename(sourceFile.getFilePath()),
+      filePath: sourceFile.getFilePath(),
+      relativePath: getWorkspaceRelativePath(sourceFile.getFilePath()),
+      languageId,
+      lineCount,
+      imports,
+      outgoingDependencies: getOutgoingDependencies(imports, sourceFile.getFilePath()),
+      exports: Array.from(sourceFile.getExportedDeclarations()).map(([name, declarations]) => {
+        const declaration = declarations[0];
 
-          return {
-            name,
-            kind: declaration ? getDeclarationKind(declaration) : 'unknown',
-          };
-        }),
-        incomingDependents,
-        impactLevel: getImpactLevel(incomingDependents.length),
-        analysisStatus: 'parsed',
-      },
-    };
+        return {
+          name,
+          kind: declaration ? getDeclarationKind(declaration) : 'unknown',
+        };
+      }),
+      incomingDependents,
+      impactLevel: getImpactLevel(incomingDependents.length),
+      analysisStatus: 'parsed',
+    });
   }
 }
 

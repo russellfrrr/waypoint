@@ -14,6 +14,7 @@ export const formatResolvedHoverResult = (
   markdown.appendMarkdown(`\`${fileReference}\` -> \`${staticAnalysis.fileName}\`\n\n`);
   markdown.appendMarkdown(`**Path:** \`${staticAnalysis.relativePath}\`\n\n`);
   markdown.appendMarkdown(`**Impact:** ${formatImpactText(staticAnalysis)}\n\n`);
+  markdown.appendMarkdown(`**Purpose:** ${staticAnalysis.purpose.summary}\n\n`);
   markdown.appendMarkdown(`**${formatPrimaryExport(staticAnalysis)}**\n\n`);
   markdown.appendMarkdown(`**Stats:** ${formatImportExportCounts(staticAnalysis)}\n\n`);
   markdown.appendMarkdown(`**Used by:** ${formatDependentCount(staticAnalysis.incomingDependents.length)}\n\n`);

@@ -17,6 +17,13 @@ export const formatAnalysisResult = (result: FileAnalysisResult): string => {
 		`Incoming Dependents: ${staticAnalysis.incomingDependents.length}`,
 		`Impact: ${formatImpactLevel(staticAnalysis.impactLevel)}`,
 		'',
+		'Purpose',
+		'-------',
+		`Likely Purpose: ${staticAnalysis.purpose.summary}`,
+		`Confidence: ${formatConfidence(staticAnalysis.purpose.confidence)}`,
+		'Evidence:',
+		...formatList(staticAnalysis.purpose.evidence),
+		'',
 		'Imports',
 		'-------',
 		...formatList(staticAnalysis.imports),
@@ -65,6 +72,20 @@ const formatImpactLevel = (
 	}
 
 	if (impactLevel === 'medium') {
+		return 'Medium';
+	}
+
+	return 'Low';
+};
+
+const formatConfidence = (
+	confidence: FileAnalysisResult['staticAnalysis']['purpose']['confidence']
+): string => {
+	if (confidence === 'high') {
+		return 'High';
+	}
+
+	if (confidence === 'medium') {
 		return 'Medium';
 	}
 
