@@ -99,6 +99,7 @@ export class FileAnalyzer {
         return {
           name,
           kind: declaration ? getDeclarationKind(declaration) : 'unknown',
+          details: declaration ? getDeclarationDetails(name, declaration) : [],
         };
       }),
       incomingDependents,
@@ -194,6 +195,114 @@ const getDeclarationKind = (node: Node): string => {
   }
 
   return node.getKindName();
+};
+
+const getDeclarationDetails = (name: string, node: Node): string[] => {
+  if (Node.isFunctionDeclaration(node)) {
+    return formatFunctionDetails(name, node);
+  }
+
+  if (Node.isVariableDeclaration(node)) {
+    return formatVariableDetails(name, node);
+  }
+
+  if (Node.isClassDeclaration(node)) {
+    return formatClassDetails(node);
+  }
+
+  if (Node.isInterfaceDeclaration(node)) {
+    return formatInterfaceDetails(node);
+  }
+
+  if (Node.isTypeAliasDeclaration(node)) {
+    return [`type: ${cleanText(node.getTypeNode()?.getText() ?? 'unknown')}`];
+  }
+
+  if (Node.isEnumDeclaration(node)) {
+    const members = node.getMembers().map((member) => member.getName());
+    return formatNamedList('members', members);
+  }
+
+  return [];
+};
+
+const formatFunctionDetails = (
+  name: string,
+  node: Node & {
+    getParameters: () => { getName: () => string; getTypeNode: () => Node | undefined; getType: () => { getText: () => string } }[];
+    getReturnTypeNode: () => Node | undefined;
+    getReturnType: () => { getText: () => string };
+    getTypeParameters?: () => { getText: () => string }[];
+  }
+): string[] => {
+  const typeParameters = node.getTypeParameters?.().map((item) => item.getText()) ?? [];
+  const parameters = node.getParameters().map((parameter) => {
+    const type = parameter.getTypeNode()?.getText() ?? parameter.getType().getText();
+    return `${parameter.getName()}: ${cleanText(type)}`;
+  });
+  const returnType = node.getReturnTypeNode()?.getText() ?? node.getReturnType().getText();
+
+  return [
+    `signature: ${name}${formatTypeParameters(typeParameters)}(${parameters.join(', ')}): ${cleanText(returnType)}`,
+  ];
+};
+
+const formatVariableDetails = (name: string, node: Node): string[] => {
+  if (!Node.isVariableDeclaration(node)) {
+    return [];
+  }
+
+  const initializer = node.getInitializer();
+
+  if (initializer && (Node.isArrowFunction(initializer) || Node.isFunctionExpression(initializer))) {
+    return formatFunctionDetails(name, initializer);
+  }
+
+  const type = node.getTypeNode()?.getText() ?? node.getType().getText(node);
+
+  return [`type: ${cleanText(type)}`];
+};
+
+const formatClassDetails = (node: Node): string[] => {
+  if (!Node.isClassDeclaration(node)) {
+    return [];
+  }
+
+  return [
+    ...formatNamedList('methods', node.getMethods().map((method) => method.getName())),
+    ...formatNamedList('properties', node.getProperties().map((property) => property.getName())),
+  ];
+};
+
+const formatInterfaceDetails = (node: Node): string[] => {
+  if (!Node.isInterfaceDeclaration(node)) {
+    return [];
+  }
+
+  return [
+    ...formatNamedList('properties', node.getProperties().map((property) => property.getName())),
+    ...formatNamedList('methods', node.getMethods().map((method) => method.getName())),
+  ];
+};
+
+const formatNamedList = (label: string, items: string[]): string[] => {
+  if (items.length === 0) {
+    return [];
+  }
+
+  return [`${label}: ${items.join(', ')}`];
+};
+
+const formatTypeParameters = (items: string[]): string => {
+  if (items.length === 0) {
+    return '';
+  }
+
+  return `<${items.join(', ')}>`;
+};
+
+const cleanText = (value: string): string => {
+  return value.replace(/\s+/g, ' ').trim();
 };
 
 const getImpactLevel = (incomingDependentCount: number): 'low' | 'medium' | 'high' => {

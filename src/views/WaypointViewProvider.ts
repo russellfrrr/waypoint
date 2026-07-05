@@ -184,7 +184,10 @@ const formatExportItems = (
     return [createRow('No exports found', '')];
   }
 
-  return items.map((item) => createRow('export', `${item.name}: ${item.kind}`));
+  return items.flatMap((item) => [
+    createRow('export', `${item.name}: ${item.kind}`),
+    ...item.details.map((detail) => createRow('detail', detail)),
+  ]);
 };
 
 const formatImpactLevel = (

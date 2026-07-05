@@ -61,7 +61,10 @@ const formatExportList = (items: FileAnalysisResult['staticAnalysis']['exports']
 		return ['- None'];
 	}
 
-	return items.map((item) => `- ${item.name} (${item.kind})`);
+	return items.flatMap((item) => [
+		`- ${item.name} (${item.kind})`,
+		...item.details.map((detail) => `  - ${detail}`),
+	]);
 };
 
 const formatImpactLevel = (
