@@ -47,14 +47,18 @@ export class WaypointViewProvider implements vscode.TreeDataProvider<WaypointTre
   }
 
   public getTreeItem(item: WaypointTreeItem): vscode.TreeItem {
-    const label = item.value ? `${item.label}: ${item.value}` : item.label;
+    const tooltip = item.value ? `${item.label}: ${item.value}` : item.label;
     const collapsibleState = item.kind === 'section'
       ? vscode.TreeItemCollapsibleState.Expanded
       : vscode.TreeItemCollapsibleState.None;
 
-    const treeItem = new vscode.TreeItem(label, collapsibleState);
+    const treeItem = new vscode.TreeItem(item.label, collapsibleState);
 
-    treeItem.tooltip = label;
+    treeItem.tooltip = tooltip;
+
+    if (item.value) {
+      treeItem.description = item.value;
+    }
 
     if (item.icon) {
       treeItem.iconPath = item.icon;
