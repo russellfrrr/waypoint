@@ -114,10 +114,10 @@ const createAnalysisTreeItems = (result: FileAnalysisResult): WaypointTreeItem[]
       createRow('Confidence', formatConfidence(staticAnalysis.purpose.confidence)),
       ...formatEvidenceItems(staticAnalysis.purpose.evidence),
     ]),
-    createSection('Imports', 'arrow-down', formatStringItems(staticAnalysis.imports)),
-    createSection('Depends On', 'references', formatFileReferenceItems(staticAnalysis.outgoingDependencies)),
+    createSection('Imports', 'arrow-down', formatImportItems(staticAnalysis.imports)),
+    createSection('Depends On', 'references', formatDependencyItems(staticAnalysis.outgoingDependencies)),
     createSection('Exports', 'symbol-key', formatExportItems(staticAnalysis.exports)),
-    createSection('Imported By', 'graph', formatFileReferenceItems(staticAnalysis.incomingDependents)),
+    createSection('Imported By', 'graph', formatImportedByItems(staticAnalysis.incomingDependents)),
     createSection('AI Insight', 'sparkle', [
       createRow('Status', 'Not available yet'),
     ]),
@@ -161,15 +161,12 @@ const createFileRow = (
   };
 };
 
-const formatStringItems = (items: string[]): WaypointTreeItem[] => {
+const formatImportItems = (items: string[]): WaypointTreeItem[] => {
   if (items.length === 0) {
-    return [createRow('None', '')];
+    return [createRow('No imports found', '')];
   }
 
-  return items.map((item) => ({
-    label: item,
-    kind: 'row',
-  }));
+  return items.map((item) => createRow('import', item));
 };
 
 const formatEvidenceItems = (items: string[]): WaypointTreeItem[] => {
@@ -184,14 +181,10 @@ const formatExportItems = (
   items: FileAnalysisResult['staticAnalysis']['exports']
 ): WaypointTreeItem[] => {
   if (items.length === 0) {
-    return [createRow('None', '')];
+    return [createRow('No exports found', '')];
   }
 
-  return items.map((item) => ({
-    label: item.name,
-    value: item.kind,
-    kind: 'row',
-  }));
+  return items.map((item) => createRow('export', `${item.name}: ${item.kind}`));
 };
 
 const formatImpactLevel = (
@@ -222,13 +215,27 @@ const formatConfidence = (
   return 'Low';
 };
 
-const formatFileReferenceItems = (items: FileReference[]): WaypointTreeItem[] => {
+const formatDependencyItems = (items: FileReference[]): WaypointTreeItem[] => {
   if (items.length === 0) {
-    return [createRow('None', '')];
+    return [createRow('No outgoing dependencies found', '')];
   }
 
   return items.map((item) => ({
-    label: item.relativePath,
+    label: 'depends on',
+    value: item.relativePath,
+    filePath: item.filePath,
+    kind: 'file',
+  }));
+};
+
+const formatImportedByItems = (items: FileReference[]): WaypointTreeItem[] => {
+  if (items.length === 0) {
+    return [createRow('Not imported by any files', '')];
+  }
+
+  return items.map((item) => ({
+    label: 'used by',
+    value: item.relativePath,
     filePath: item.filePath,
     kind: 'file',
   }));
