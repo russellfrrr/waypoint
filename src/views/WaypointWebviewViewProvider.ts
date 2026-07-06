@@ -57,7 +57,7 @@ const getWebviewHtml = (
   result: FileAnalysisResult | undefined
 ): string => {
   const body = result && state === 'ready'
-    ? `<main><h1>${escapeHtml(result.staticAnalysis.fileName)}</h1></main>`
+    ? renderAnalysis(result)
     : `<main><p>${getStateMessage(state)}</p></main>`;
 
   return `<!DOCTYPE html>
@@ -71,6 +71,44 @@ const getWebviewHtml = (
   ${body}
 </body>
 </html>`;
+};
+
+const renderAnalysis = (result: FileAnalysisResult): string => {
+  const analysis = result.staticAnalysis;
+
+  return `<main class="page">
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Waypoint Deep Analysis</p>
+        <h1>${escapeHtml(analysis.fileName)}</h1>
+        <p class="path">${escapeHtml(analysis.relativePath)}</p>
+      </div>
+      <span class="badge badge-${analysis.impactLevel}">${formatImpactLevel(analysis.impactLevel)} impact</span>
+    </section>
+
+    <section class="section">
+      <h2>Likely Purpose</h2>
+      <p>${escapeHtml(analysis.purpose.summary)}</p>
+      <div class="meta-row">
+        <span>Confidence</span>
+        <strong>${formatConfidence(analysis.purpose.confidence)}</strong>
+      </div>
+    </section>
+
+    <section class="metrics-grid">
+      ${renderMetric('Lines', String(analysis.lineCount))}
+      ${renderMetric('Imports', String(analysis.imports.length))}
+      ${renderMetric('Exports', String(analysis.exports.length))}
+      ${renderMetric('Used by', formatFileCount(analysis.incomingDependents.length))}
+    </section>
+  </main>`;
+};
+
+const renderMetric = (label: string, value: string): string => {
+  return `<article class="metric">
+    <span>${escapeHtml(label)}</span>
+    <strong>${escapeHtml(value)}</strong>
+  </article>`;
 };
 
 const getStateMessage = (state: WebviewState): string => {
@@ -92,4 +130,36 @@ const escapeHtml = (value: string): string => {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+};
+
+const formatFileCount = (count: number): string => {
+  return count === 1 ? '1 file' : `${count} files`;
+};
+
+const formatImpactLevel = (
+  impactLevel: FileAnalysisResult['staticAnalysis']['impactLevel']
+): string => {
+  if (impactLevel === 'high') {
+    return 'High';
+  }
+
+  if (impactLevel === 'medium') {
+    return 'Medium';
+  }
+
+  return 'Low';
+};
+
+const formatConfidence = (
+  confidence: FileAnalysisResult['staticAnalysis']['purpose']['confidence']
+): string => {
+  if (confidence === 'high') {
+    return 'High';
+  }
+
+  if (confidence === 'medium') {
+    return 'Medium';
+  }
+
+  return 'Low';
 };
