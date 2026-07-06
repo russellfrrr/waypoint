@@ -66,6 +66,188 @@ const getWebviewHtml = (
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Waypoint Deep Analysis</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--vscode-foreground);
+      background: var(--vscode-sideBar-background);
+      font-family: var(--vscode-font-family);
+      font-size: var(--vscode-font-size);
+      line-height: 1.45;
+    }
+
+    .page {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .hero,
+    .section,
+    .metric,
+    .symbol {
+      border: 1px solid var(--vscode-sideBarSectionHeader-border);
+      border-radius: 8px;
+      background: var(--vscode-editor-background);
+    }
+
+    .hero {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px;
+    }
+
+    .eyebrow {
+      margin: 0 0 6px;
+      color: var(--vscode-descriptionForeground);
+      font-size: 11px;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.15;
+      overflow-wrap: anywhere;
+    }
+
+    h2 {
+      margin-bottom: 10px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .path,
+    .muted {
+      color: var(--vscode-descriptionForeground);
+    }
+
+    .path {
+      margin-top: 6px;
+      overflow-wrap: anywhere;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+      border-radius: 999px;
+      padding: 3px 8px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .badge-low {
+      color: var(--vscode-testing-iconPassed, var(--vscode-editorInfo-foreground));
+      background: color-mix(in srgb, var(--vscode-testing-iconPassed, var(--vscode-editorInfo-foreground)) 14%, transparent);
+    }
+
+    .badge-medium {
+      color: var(--vscode-testing-iconQueued, var(--vscode-editorWarning-foreground));
+      background: color-mix(in srgb, var(--vscode-testing-iconQueued, var(--vscode-editorWarning-foreground)) 16%, transparent);
+    }
+
+    .badge-high {
+      color: var(--vscode-testing-iconFailed, var(--vscode-editorError-foreground));
+      background: color-mix(in srgb, var(--vscode-testing-iconFailed, var(--vscode-editorError-foreground)) 14%, transparent);
+    }
+
+    .section {
+      padding: 12px;
+    }
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .metric {
+      min-width: 0;
+      padding: 10px;
+    }
+
+    .metric span,
+    .meta-row span {
+      display: block;
+      color: var(--vscode-descriptionForeground);
+      font-size: 11px;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 4px;
+      font-size: 15px;
+    }
+
+    .meta-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    li,
+    code {
+      overflow-wrap: anywhere;
+    }
+
+    code {
+      color: var(--vscode-textPreformat-foreground);
+      font-family: var(--vscode-editor-font-family);
+      font-size: 12px;
+    }
+
+    .symbol-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .symbol {
+      padding: 10px;
+      background: var(--vscode-sideBar-background);
+    }
+
+    .symbol-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .symbol-header strong {
+      overflow-wrap: anywhere;
+    }
+
+    .symbol-header span {
+      flex: 0 0 auto;
+      color: var(--vscode-descriptionForeground);
+      font-size: 11px;
+    }
+  </style>
 </head>
 <body>
   ${body}
