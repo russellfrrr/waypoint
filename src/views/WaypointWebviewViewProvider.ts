@@ -67,7 +67,7 @@ const getWebviewHtml = (
 ): string => {
   const body = result && state === 'ready'
     ? renderAnalysis(result)
-    : `<main><p>${getStateMessage(state)}</p></main>`;
+    : renderState(state);
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -96,10 +96,19 @@ const getWebviewHtml = (
       padding: 14px;
     }
 
+    .state-page {
+      display: grid;
+      min-height: 100vh;
+      place-items: center;
+      padding: 16px;
+    }
+
     .hero,
     .section,
     .metric,
-    .symbol {
+    .symbol,
+    .state-card,
+    .notice {
       border: 1px solid var(--vscode-sideBarSectionHeader-border);
       border-radius: 8px;
       background: var(--vscode-editor-background);
@@ -175,6 +184,22 @@ const getWebviewHtml = (
 
     .section {
       padding: 12px;
+    }
+
+    .state-card {
+      width: 100%;
+      padding: 16px;
+    }
+
+    .state-card h1 {
+      margin-bottom: 8px;
+      font-size: 18px;
+    }
+
+    .notice {
+      padding: 10px 12px;
+      color: var(--vscode-editorWarning-foreground);
+      background: color-mix(in srgb, var(--vscode-editorWarning-foreground) 10%, transparent);
     }
 
     .metrics-grid {
@@ -328,6 +353,8 @@ const renderAnalysis = (result: FileAnalysisResult): string => {
       Open current file
     </button>
 
+    ${renderStatusNotice(analysis.analysisStatus)}
+
     <section class="section">
       <h2>Likely Purpose</h2>
       <p>${escapeHtml(analysis.purpose.summary)}</p>
@@ -377,6 +404,34 @@ const renderAnalysis = (result: FileAnalysisResult): string => {
   </main>`;
 };
 
+const renderState = (state: WebviewState): string => {
+  return `<main class="state-page">
+    <section class="state-card">
+      <p class="eyebrow">Waypoint Deep Analysis</p>
+      <h1>${escapeHtml(getStateMessage(state))}</h1>
+      <p class="muted">${escapeHtml(getStateDetail(state))}</p>
+    </section>
+  </main>`;
+};
+
+const renderStatusNotice = (
+  status: FileAnalysisResult['staticAnalysis']['analysisStatus']
+): string => {
+  if (status === 'parsed') {
+    return '';
+  }
+
+  if (status === 'too-large') {
+    return `<section class="notice">
+      This file was resolved, but it is too large for detailed static analysis.
+    </section>`;
+  }
+
+  return `<section class="notice">
+    This file was resolved, but Waypoint only performs detailed parsing for JavaScript and TypeScript files.
+  </section>`;
+};
+
 const renderMetric = (label: string, value: string): string => {
   return `<article class="metric">
     <span>${escapeHtml(label)}</span>
@@ -424,7 +479,7 @@ const renderExportList = (items: ExportedDeclaration[]): string => {
 
 const getStateMessage = (state: WebviewState): string => {
   if (state === 'loading') {
-    return 'Analyzing current file...';
+    return 'Analyzing current file';
   }
 
   if (state === 'error') {
@@ -432,6 +487,18 @@ const getStateMessage = (state: WebviewState): string => {
   }
 
   return 'Open a file to see Waypoint analysis.';
+};
+
+const getStateDetail = (state: WebviewState): string => {
+  if (state === 'loading') {
+    return 'Waypoint is reading imports, exports, dependencies, purpose signals, and impact.';
+  }
+
+  if (state === 'error') {
+    return 'Try another JavaScript or TypeScript file, or refresh the Deep Analysis view.';
+  }
+
+  return 'Select a JavaScript or TypeScript file to generate a Deep Analysis report.';
 };
 
 const escapeHtml = (value: string): string => {
