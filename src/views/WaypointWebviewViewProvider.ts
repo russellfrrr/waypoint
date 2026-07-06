@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { FileAnalyzer } from '../analyzer/FileAnalyzer';
 import { ExportedDeclaration, FileAnalysisResult, FileReference } from '../types';
 
-type WebviewState = 'empty' | 'loading' | 'ready' | 'error';
+export type WebviewState = 'empty' | 'loading' | 'ready' | 'error';
 
 export class WaypointWebviewViewProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
@@ -61,7 +61,7 @@ export class WaypointWebviewViewProvider implements vscode.WebviewViewProvider {
   }
 }
 
-const getWebviewHtml = (
+export const getWebviewHtml = (
   state: WebviewState,
   result: FileAnalysisResult | undefined
 ): string => {

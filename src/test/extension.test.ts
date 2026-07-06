@@ -4,8 +4,10 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { FileAnalyzer } from '../analyzer/FileAnalyzer';
+import { FileAnalysisResult } from '../types';
 import { resolveFileReference } from '../utils/pathUtils';
 import { isImportOrExportReference } from '../utils/referenceUtils';
+import { getWebviewHtml } from '../views/WaypointWebviewViewProvider';
 
 suite('Path Utilities', () => {
 	let tempDirectory: string;
@@ -142,5 +144,57 @@ suite('File Analyzer', () => {
 		assert.deepStrictEqual(userServiceExport.details, [
 			'methods: login, logout',
 		]);
+	});
+});
+
+suite('Deep Analysis Webview', () => {
+	const createResult = (): FileAnalysisResult => ({
+		staticAnalysis: {
+			fileName: '<script>alert("x")</script>.ts',
+			filePath: path.join('C:', 'project', 'src', 'parser.ts'),
+			relativePath: 'src/parser.ts',
+			languageId: 'typescript',
+			lineCount: 12,
+			purpose: {
+				summary: 'Appears to provide parser helpers.',
+				confidence: 'medium',
+				evidence: ['Exports parse (function).'],
+			},
+			imports: ['./types'],
+			outgoingDependencies: [
+				{
+					filePath: path.join('C:', 'project', 'src', 'types.ts'),
+					relativePath: 'src/types.ts',
+				},
+			],
+			exports: [
+				{
+					name: 'parse',
+					kind: 'function',
+					details: ['signature: parse(value: string): Parser'],
+				},
+			],
+			incomingDependents: [],
+			impactLevel: 'low',
+			analysisStatus: 'parsed',
+		},
+	});
+
+	test('renders a report with escaped analysis details', () => {
+		const html = getWebviewHtml('ready', createResult());
+
+		assert.ok(html.includes('Waypoint Deep Analysis'));
+		assert.ok(html.includes('Likely Purpose'));
+		assert.ok(html.includes('Depends On'));
+		assert.ok(html.includes('signature: parse(value: string): Parser'));
+		assert.ok(html.includes('&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;.ts'));
+		assert.strictEqual(html.includes('<script>alert("x")</script>.ts'), false);
+	});
+
+	test('renders an empty state without an analysis result', () => {
+		const html = getWebviewHtml('empty', undefined);
+
+		assert.ok(html.includes('Open a file to see Waypoint analysis.'));
+		assert.ok(html.includes('Select a JavaScript or TypeScript file'));
 	});
 });
