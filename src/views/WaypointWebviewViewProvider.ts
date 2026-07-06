@@ -6,6 +6,7 @@ type WebviewState = 'empty' | 'loading' | 'ready' | 'error';
 
 export class WaypointWebviewViewProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
+  private messageListener: vscode.Disposable | undefined;
   private currentResult: FileAnalysisResult | undefined;
   private state: WebviewState = 'empty';
 
@@ -16,6 +17,14 @@ export class WaypointWebviewViewProvider implements vscode.WebviewViewProvider {
     this.view.webview.options = {
       enableScripts: true,
     };
+    this.messageListener?.dispose();
+    this.messageListener = this.view.webview.onDidReceiveMessage((message: unknown) => {
+      if (!isOpenFileMessage(message)) {
+        return;
+      }
+
+      void vscode.commands.executeCommand('waypoint.openFile', message.filePath);
+    });
     this.render();
   }
 
@@ -247,10 +256,57 @@ const getWebviewHtml = (
       color: var(--vscode-descriptionForeground);
       font-size: 11px;
     }
+
+    button {
+      font: inherit;
+    }
+
+    .link-button,
+    .file-link {
+      border: 0;
+      padding: 0;
+      color: var(--vscode-textLink-foreground);
+      background: transparent;
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .link-button {
+      align-self: flex-start;
+      border-radius: 4px;
+      padding: 4px 0;
+      font-weight: 700;
+    }
+
+    .file-link {
+      overflow-wrap: anywhere;
+    }
+
+    .link-button:hover,
+    .file-link:hover {
+      color: var(--vscode-textLink-activeForeground);
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
   ${body}
+  <script>
+    const vscode = acquireVsCodeApi();
+
+    document.addEventListener('click', (event) => {
+      const target = event.target.closest('[data-file]');
+
+      if (!target) {
+        return;
+      }
+
+      vscode.postMessage({
+        type: 'openFile',
+        filePath: target.dataset.file,
+      });
+    });
+  </script>
 </body>
 </html>`;
 };
@@ -267,6 +323,10 @@ const renderAnalysis = (result: FileAnalysisResult): string => {
       </div>
       <span class="badge badge-${analysis.impactLevel}">${formatImpactLevel(analysis.impactLevel)} impact</span>
     </section>
+
+    <button class="link-button" type="button" data-file="${escapeHtml(analysis.filePath)}">
+      Open current file
+    </button>
 
     <section class="section">
       <h2>Likely Purpose</h2>
@@ -339,7 +399,9 @@ const renderFileReferenceList = (items: FileReference[], emptyText: string): str
 
   return `<ul class="list">${items.map((item) => `
     <li>
-      <code>${escapeHtml(item.relativePath)}</code>
+      <button class="file-link" type="button" data-file="${escapeHtml(item.filePath)}">
+        ${escapeHtml(item.relativePath)}
+      </button>
     </li>
   `).join('')}</ul>`;
 };
@@ -379,6 +441,18 @@ const escapeHtml = (value: string): string => {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+};
+
+const isOpenFileMessage = (
+  message: unknown
+): message is { type: 'openFile'; filePath: string } => {
+  if (!message || typeof message !== 'object') {
+    return false;
+  }
+
+  const candidate = message as { type?: unknown; filePath?: unknown };
+
+  return candidate.type === 'openFile' && typeof candidate.filePath === 'string';
 };
 
 const formatFileCount = (count: number): string => {
