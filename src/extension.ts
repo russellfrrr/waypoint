@@ -3,11 +3,13 @@ import { FileAnalyzer } from './analyzer/FileAnalyzer';
 import { formatAnalysisResult } from './utils/formatAnalysisResult';
 import { FileReferenceHoverProvider } from './hover/FileReferenceHoverProvider';
 import { WaypointWebviewViewProvider } from './views/WaypointWebviewViewProvider';
+import { AiSettingsService } from './ai/AiSettingsService';
 
 export const activate = (context: vscode.ExtensionContext) => {
 	console.log('Waypoint is now active.');
 
 	const analyzer = new FileAnalyzer();
+	const aiSettingsService = new AiSettingsService(context.secrets);
 	const waypointViewProvider = new WaypointWebviewViewProvider(analyzer);
 	const waypointWebviewView = vscode.window.registerWebviewViewProvider(
 		'waypoint.deepAnalysis',
@@ -57,6 +59,41 @@ export const activate = (context: vscode.ExtensionContext) => {
 		}
 	);
 
+	const setApiKeyCommand = vscode.commands.registerCommand(
+		'waypoint.setApiKey',
+		async () => {
+			const apiKey = await vscode.window.showInputBox({
+				prompt: 'Enter your AI API key. Waypoint stores it in VS Code SecretStorage.',
+				password: true,
+				ignoreFocusOut: true,
+			});
+
+			if (!apiKey) {
+				return;
+			}
+
+			await aiSettingsService.setApiKey(apiKey);
+			vscode.window.showInformationMessage('Waypoint AI API key saved securely.');
+			void waypointViewProvider.refresh();
+		}
+	);
+
+	const clearApiKeyCommand = vscode.commands.registerCommand(
+		'waypoint.clearApiKey',
+		async () => {
+			await aiSettingsService.clearApiKey();
+			vscode.window.showInformationMessage('Waypoint AI API key cleared.');
+			void waypointViewProvider.refresh();
+		}
+	);
+
+	const generateAiInsightCommand = vscode.commands.registerCommand(
+		'waypoint.generateAiInsight',
+		() => {
+			vscode.window.showInformationMessage('AI insight generation is coming in the next Waypoint step.');
+		}
+	);
+
 	const activeEditorListener = vscode.window.onDidChangeActiveTextEditor(() => {
 		void waypointViewProvider.refresh();
 	});
@@ -67,6 +104,9 @@ export const activate = (context: vscode.ExtensionContext) => {
 		analyzeCurrentFileCommand,
 		openFileCommand,
 		refreshDeepAnalysisCommand,
+		setApiKeyCommand,
+		clearApiKeyCommand,
+		generateAiInsightCommand,
 		outputChannel,
 		hoverProvider,
 		waypointWebviewView,
