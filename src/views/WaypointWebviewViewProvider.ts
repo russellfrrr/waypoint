@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import { FileAnalyzer } from '../analyzer/FileAnalyzer';
+import { GitActivityAnalyzer } from '../analyzer/GitActivityAnalyzer';
+import { getGraphNeighborhood, WorkspaceGraphAnalyzer } from '../analyzer/WorkspaceGraphAnalyzer';
 import { AiInsightService } from '../ai/AiInsightService';
-import { ExportedDeclaration, FileAnalysisResult, FileReference } from '../types';
+import { DependencyGraph, ExportedDeclaration, FileAnalysisResult, FileReference, GitActivity } from '../types';
 
 export type WebviewState = 'empty' | 'loading' | 'ready' | 'error';
 
@@ -9,12 +11,16 @@ export class WaypointWebviewViewProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
   private messageListener: vscode.Disposable | undefined;
   private currentResult: FileAnalysisResult | undefined;
+  private graph: DependencyGraph | undefined;
+  private gitActivity: GitActivity | undefined;
   private aiError: string | undefined;
   private state: WebviewState = 'empty';
 
   public constructor(
     private readonly analyzer: FileAnalyzer,
-    private readonly aiInsightService?: AiInsightService
+    private readonly aiInsightService?: AiInsightService,
+    private readonly graphAnalyzer = new WorkspaceGraphAnalyzer(),
+    private readonly gitActivityAnalyzer = new GitActivityAnalyzer()
   ) {}
 
   public resolveWebviewView(webviewView: vscode.WebviewView): void {
@@ -52,6 +58,12 @@ export class WaypointWebviewViewProvider implements vscode.WebviewViewProvider {
 
     try {
       this.currentResult = await this.analyzer.analyze(editor.document);
+      const [graph, gitActivity] = await Promise.all([
+        this.graphAnalyzer.analyze(),
+        this.gitActivityAnalyzer.analyze(),
+      ]);
+      this.graph = getGraphNeighborhood(graph, this.currentResult.staticAnalysis.filePath);
+      this.gitActivity = gitActivity;
       this.aiError = undefined;
       this.state = 'ready';
     } catch {
@@ -88,17 +100,25 @@ export class WaypointWebviewViewProvider implements vscode.WebviewViewProvider {
       return;
     }
 
-    this.view.webview.html = getWebviewHtml(this.state, this.currentResult, this.aiError);
+    this.view.webview.html = getWebviewHtml(
+      this.state,
+      this.currentResult,
+      this.aiError,
+      this.graph,
+      this.gitActivity
+    );
   }
 }
 
 export const getWebviewHtml = (
   state: WebviewState,
   result: FileAnalysisResult | undefined,
-  aiError?: string
+  aiError?: string,
+  graph?: DependencyGraph,
+  gitActivity?: GitActivity
 ): string => {
   const body = result && state === 'ready'
-    ? renderAnalysis(result, aiError)
+    ? renderAnalysis(result, aiError, graph, gitActivity)
     : renderState(state);
 
   return `<!DOCTYPE html>
@@ -406,7 +426,12 @@ export const getWebviewHtml = (
 </html>`;
 };
 
-const renderAnalysis = (result: FileAnalysisResult, aiError: string | undefined): string => {
+const renderAnalysis = (
+  result: FileAnalysisResult,
+  aiError: string | undefined,
+  graph: DependencyGraph | undefined,
+  gitActivity: GitActivity | undefined
+): string => {
   const analysis = result.staticAnalysis;
 
   return `<main class="page">
