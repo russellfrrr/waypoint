@@ -41,6 +41,22 @@ export type AiInsight = {
   evidence: string[];
 };
 
+export type DependencyGraphNode = {
+  filePath: string;
+  relativePath: string;
+};
+
+export type DependencyGraphEdge = {
+  from: FileReference;
+  to: FileReference;
+};
+
+export type DependencyGraph = {
+  nodes: DependencyGraphNode[];
+  edges: DependencyGraphEdge[];
+  truncated: boolean;
+};
+
 export type FileAnalysisResult = {
   staticAnalysis: StaticFileAnalysis;
   aiInsight?: AiInsight;
