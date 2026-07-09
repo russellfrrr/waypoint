@@ -4,13 +4,15 @@ import { formatAnalysisResult } from './utils/formatAnalysisResult';
 import { FileReferenceHoverProvider } from './hover/FileReferenceHoverProvider';
 import { WaypointWebviewViewProvider } from './views/WaypointWebviewViewProvider';
 import { AiSettingsService } from './ai/AiSettingsService';
+import { AiInsightService } from './ai/AiInsightService';
 
 export const activate = (context: vscode.ExtensionContext) => {
 	console.log('Waypoint is now active.');
 
 	const analyzer = new FileAnalyzer();
 	const aiSettingsService = new AiSettingsService(context.secrets);
-	const waypointViewProvider = new WaypointWebviewViewProvider(analyzer);
+	const aiInsightService = new AiInsightService(aiSettingsService);
+	const waypointViewProvider = new WaypointWebviewViewProvider(analyzer, aiInsightService);
 	const waypointWebviewView = vscode.window.registerWebviewViewProvider(
 		'waypoint.deepAnalysis',
 		waypointViewProvider
@@ -90,7 +92,7 @@ export const activate = (context: vscode.ExtensionContext) => {
 	const generateAiInsightCommand = vscode.commands.registerCommand(
 		'waypoint.generateAiInsight',
 		() => {
-			vscode.window.showInformationMessage('AI insight generation is coming in the next Waypoint step.');
+			void waypointViewProvider.generateAiInsight();
 		}
 	);
 

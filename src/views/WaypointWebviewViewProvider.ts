@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { FileAnalyzer } from '../analyzer/FileAnalyzer';
+import { AiInsightService } from '../ai/AiInsightService';
 import { ExportedDeclaration, FileAnalysisResult, FileReference } from '../types';
 
 export type WebviewState = 'empty' | 'loading' | 'ready' | 'error';
@@ -8,9 +9,13 @@ export class WaypointWebviewViewProvider implements vscode.WebviewViewProvider {
   private view: vscode.WebviewView | undefined;
   private messageListener: vscode.Disposable | undefined;
   private currentResult: FileAnalysisResult | undefined;
+  private aiError: string | undefined;
   private state: WebviewState = 'empty';
 
-  public constructor(private readonly analyzer: FileAnalyzer) {}
+  public constructor(
+    private readonly analyzer: FileAnalyzer,
+    private readonly aiInsightService?: AiInsightService
+  ) {}
 
   public resolveWebviewView(webviewView: vscode.WebviewView): void {
     this.view = webviewView;
@@ -20,6 +25,10 @@ export class WaypointWebviewViewProvider implements vscode.WebviewViewProvider {
     this.messageListener?.dispose();
     this.messageListener = this.view.webview.onDidReceiveMessage((message: unknown) => {
       if (!isOpenFileMessage(message)) {
+        if (isGenerateAiMessage(message)) {
+          void this.generateAiInsight();
+        }
+
         return;
       }
 
@@ -43,6 +52,7 @@ export class WaypointWebviewViewProvider implements vscode.WebviewViewProvider {
 
     try {
       this.currentResult = await this.analyzer.analyze(editor.document);
+      this.aiError = undefined;
       this.state = 'ready';
     } catch {
       this.currentResult = undefined;
@@ -52,21 +62,43 @@ export class WaypointWebviewViewProvider implements vscode.WebviewViewProvider {
     this.render();
   }
 
+  public async generateAiInsight(): Promise<void> {
+    if (!this.currentResult || !this.aiInsightService) {
+      return;
+    }
+
+    this.aiError = undefined;
+    this.render();
+
+    const result = await this.aiInsightService.generateInsight(this.currentResult);
+
+    if (result.insight) {
+      this.currentResult = {
+        ...this.currentResult,
+        aiInsight: result.insight,
+      };
+    }
+
+    this.aiError = result.error;
+    this.render();
+  }
+
   private render(): void {
     if (!this.view) {
       return;
     }
 
-    this.view.webview.html = getWebviewHtml(this.state, this.currentResult);
+    this.view.webview.html = getWebviewHtml(this.state, this.currentResult, this.aiError);
   }
 }
 
 export const getWebviewHtml = (
   state: WebviewState,
-  result: FileAnalysisResult | undefined
+  result: FileAnalysisResult | undefined,
+  aiError?: string
 ): string => {
   const body = result && state === 'ready'
-    ? renderAnalysis(result)
+    ? renderAnalysis(result, aiError)
     : renderState(state);
 
   return `<!DOCTYPE html>
@@ -282,14 +314,19 @@ export const getWebviewHtml = (
       font-size: 11px;
     }
 
+    h3 {
+      margin: 12px 0 6px;
+      font-size: 12px;
+    }
+
     button {
       font: inherit;
     }
 
     .link-button,
-    .file-link {
+    .file-link,
+    .primary-button {
       border: 0;
-      padding: 0;
       color: var(--vscode-textLink-foreground);
       background: transparent;
       cursor: pointer;
@@ -304,13 +341,37 @@ export const getWebviewHtml = (
     }
 
     .file-link {
+      padding: 0;
       overflow-wrap: anywhere;
+    }
+
+    .primary-button {
+      margin-top: 10px;
+      border-radius: 4px;
+      padding: 6px 10px;
+      color: var(--vscode-button-foreground);
+      background: var(--vscode-button-background);
+      text-align: center;
     }
 
     .link-button:hover,
     .file-link:hover {
       color: var(--vscode-textLink-activeForeground);
       text-decoration: underline;
+    }
+
+    .primary-button:hover {
+      background: var(--vscode-button-hoverBackground);
+    }
+
+    .ai-card {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .error-text {
+      color: var(--vscode-errorForeground);
     }
   </style>
 </head>
@@ -320,6 +381,15 @@ export const getWebviewHtml = (
     const vscode = acquireVsCodeApi();
 
     document.addEventListener('click', (event) => {
+      const actionTarget = event.target.closest('[data-action]');
+
+      if (actionTarget) {
+        vscode.postMessage({
+          type: actionTarget.dataset.action,
+        });
+        return;
+      }
+
       const target = event.target.closest('[data-file]');
 
       if (!target) {
@@ -336,7 +406,7 @@ export const getWebviewHtml = (
 </html>`;
 };
 
-const renderAnalysis = (result: FileAnalysisResult): string => {
+const renderAnalysis = (result: FileAnalysisResult, aiError: string | undefined): string => {
   const analysis = result.staticAnalysis;
 
   return `<main class="page">
@@ -399,9 +469,35 @@ const renderAnalysis = (result: FileAnalysisResult): string => {
 
     <section class="section">
       <h2>AI Insight</h2>
-      <p class="muted">Not available yet. Static analysis is the foundation.</p>
+      ${renderAiInsight(result, aiError)}
     </section>
   </main>`;
+};
+
+const renderAiInsight = (result: FileAnalysisResult, aiError: string | undefined): string => {
+  if (result.aiInsight) {
+    return `<div class="ai-card">
+      <p>${escapeHtml(result.aiInsight.summary)}</p>
+      <div class="meta-row">
+        <span>Confidence</span>
+        <strong>${formatConfidence(result.aiInsight.confidence)}</strong>
+      </div>
+      <h3>Responsibilities</h3>
+      ${renderStringList(result.aiInsight.responsibilities, 'No responsibilities returned.')}
+      <h3>Change Risk</h3>
+      <p>${escapeHtml(result.aiInsight.changeRisk)}</p>
+      <h3>Evidence</h3>
+      ${renderStringList(result.aiInsight.evidence, 'No AI evidence returned.')}
+    </div>`;
+  }
+
+  if (aiError) {
+    return `<p class="error-text">${escapeHtml(aiError)}</p>
+      <button class="primary-button" type="button" data-action="generate-ai">Try again</button>`;
+  }
+
+  return `<p class="muted">Optional. Uses your own API key when configured.</p>
+    <button class="primary-button" type="button" data-action="generate-ai">Generate AI insight</button>`;
 };
 
 const renderState = (state: WebviewState): string => {
@@ -520,6 +616,18 @@ const isOpenFileMessage = (
   const candidate = message as { type?: unknown; filePath?: unknown };
 
   return candidate.type === 'openFile' && typeof candidate.filePath === 'string';
+};
+
+const isGenerateAiMessage = (
+  message: unknown
+): message is { type: 'generate-ai' } => {
+  if (!message || typeof message !== 'object') {
+    return false;
+  }
+
+  const candidate = message as { type?: unknown };
+
+  return candidate.type === 'generate-ai';
 };
 
 const formatFileCount = (count: number): string => {
