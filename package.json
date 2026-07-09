@@ -30,8 +30,45 @@
         "command": "waypoint.refreshDeepAnalysis",
         "title": "Waypoint: Refresh Deep Analysis",
         "icon": "$(refresh)"
+      },
+      {
+        "command": "waypoint.setApiKey",
+        "title": "Waypoint: Set AI API Key"
+      },
+      {
+        "command": "waypoint.clearApiKey",
+        "title": "Waypoint: Clear AI API Key"
+      },
+      {
+        "command": "waypoint.generateAiInsight",
+        "title": "Waypoint: Generate AI Insight",
+        "icon": "$(sparkle)"
       }
     ],
+    "configuration": {
+      "title": "Waypoint",
+      "properties": {
+        "waypoint.ai.provider": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "openai-compatible"
+          ],
+          "default": "disabled",
+          "description": "AI provider used for optional Waypoint insights. Static analysis works without AI."
+        },
+        "waypoint.ai.model": {
+          "type": "string",
+          "default": "gpt-4.1-mini",
+          "description": "Model name for the configured bring-your-own-key AI provider."
+        },
+        "waypoint.ai.baseUrl": {
+          "type": "string",
+          "default": "https://api.openai.com/v1",
+          "description": "Base URL for an OpenAI-compatible chat completions API."
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -54,6 +91,11 @@
       "view/title": [
         {
           "command": "waypoint.refreshDeepAnalysis",
+          "when": "view == waypoint.deepAnalysis",
+          "group": "navigation"
+        },
+        {
+          "command": "waypoint.generateAiInsight",
           "when": "view == waypoint.deepAnalysis",
           "group": "navigation"
         }
