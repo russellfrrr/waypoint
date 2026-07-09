@@ -57,6 +57,23 @@ export type DependencyGraph = {
   truncated: boolean;
 };
 
+export type GitActivityDay = {
+  date: string;
+  commits: number;
+};
+
+export type GitChangedFile = {
+  relativePath: string;
+  changes: number;
+};
+
+export type GitActivity = {
+  days: GitActivityDay[];
+  topChangedFiles: GitChangedFile[];
+  available: boolean;
+  error?: string;
+};
+
 export type FileAnalysisResult = {
   staticAnalysis: StaticFileAnalysis;
   aiInsight?: AiInsight;
