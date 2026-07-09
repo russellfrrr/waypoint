@@ -393,6 +393,82 @@ export const getWebviewHtml = (
     .error-text {
       color: var(--vscode-errorForeground);
     }
+
+    .graph-summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .graph-summary div {
+      border-radius: 6px;
+      padding: 8px;
+      background: var(--vscode-sideBar-background);
+    }
+
+    .graph-summary strong,
+    .graph-summary span {
+      display: block;
+    }
+
+    .graph-summary span {
+      color: var(--vscode-descriptionForeground);
+      font-size: 11px;
+    }
+
+    .edge-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .edge-list li {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      border-left: 2px solid var(--vscode-textLink-foreground);
+      padding-left: 8px;
+    }
+
+    .edge-list span {
+      color: var(--vscode-descriptionForeground);
+      font-size: 11px;
+    }
+
+    .commit-chart {
+      display: flex;
+      align-items: end;
+      gap: 6px;
+      min-height: 82px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .commit-day {
+      display: flex;
+      flex: 0 0 24px;
+      flex-direction: column;
+      align-items: center;
+      justify-content: end;
+      gap: 4px;
+      min-height: 78px;
+    }
+
+    .commit-bar {
+      width: 14px;
+      border-radius: 4px 4px 0 0;
+      background: var(--vscode-charts-blue);
+    }
+
+    .commit-day span {
+      color: var(--vscode-descriptionForeground);
+      font-size: 10px;
+      writing-mode: vertical-rl;
+    }
   </style>
 </head>
 <body>
@@ -490,6 +566,16 @@ const renderAnalysis = (
     <section class="section">
       <h2>Imported By</h2>
       ${renderFileReferenceList(analysis.incomingDependents, 'Not imported by any files.')}
+    </section>
+
+    <section class="section">
+      <h2>Dependency Graph</h2>
+      ${renderDependencyGraph(graph)}
+    </section>
+
+    <section class="section">
+      <h2>Commit Activity</h2>
+      ${renderGitActivity(gitActivity)}
     </section>
 
     <section class="section">
@@ -596,6 +682,58 @@ const renderExportList = (items: ExportedDeclaration[]): string => {
       ${renderStringList(item.details, 'No additional symbol details found.')}
     </article>
   `).join('')}</div>`;
+};
+
+const renderDependencyGraph = (graph: DependencyGraph | undefined): string => {
+  if (!graph || graph.edges.length === 0) {
+    return '<p class="muted">No local dependency edges found for this file.</p>';
+  }
+
+  return `<div class="graph-summary">
+    <div><strong>${graph.nodes.length}</strong><span>nearby files</span></div>
+    <div><strong>${graph.edges.length}</strong><span>relationships</span></div>
+    ${graph.truncated ? '<p class="muted">Workspace graph was truncated for performance.</p>' : ''}
+  </div>
+  <ul class="edge-list">${graph.edges.map((edge) => `
+    <li>
+      <code>${escapeHtml(edge.from.relativePath)}</code>
+      <span>imports</span>
+      <code>${escapeHtml(edge.to.relativePath)}</code>
+    </li>
+  `).join('')}</ul>`;
+};
+
+const renderGitActivity = (activity: GitActivity | undefined): string => {
+  if (!activity) {
+    return '<p class="muted">Git activity has not been loaded yet.</p>';
+  }
+
+  if (!activity.available) {
+    return `<p class="muted">${escapeHtml(activity.error ?? 'Git activity is unavailable.')}</p>`;
+  }
+
+  const maxCommits = Math.max(...activity.days.map((day) => day.commits), 1);
+
+  return `<div class="commit-chart">
+    ${activity.days.slice(-14).map((day) => `
+      <div class="commit-day">
+        <div class="commit-bar" style="height: ${Math.max(8, Math.round((day.commits / maxCommits) * 56))}px"></div>
+        <span>${escapeHtml(day.date.slice(5))}</span>
+      </div>
+    `).join('')}
+  </div>
+  <h3>Most changed files</h3>
+  ${renderChangedFiles(activity.topChangedFiles)}`;
+};
+
+const renderChangedFiles = (items: GitActivity['topChangedFiles']): string => {
+  if (items.length === 0) {
+    return '<p class="muted">No changed files found in recent commits.</p>';
+  }
+
+  return `<ul class="list">${items.map((item) => `
+    <li><code>${escapeHtml(item.relativePath)}</code> changed ${item.changes} ${item.changes === 1 ? 'time' : 'times'}</li>
+  `).join('')}</ul>`;
 };
 
 const getStateMessage = (state: WebviewState): string => {
