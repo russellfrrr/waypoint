@@ -4,7 +4,9 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { FileAnalyzer } from '../analyzer/FileAnalyzer';
-import { FileAnalysisResult } from '../types';
+import { parseGitLog } from '../analyzer/GitActivityAnalyzer';
+import { getGraphNeighborhood } from '../analyzer/WorkspaceGraphAnalyzer';
+import { DependencyGraph, FileAnalysisResult, GitActivity } from '../types';
 import { resolveFileReference } from '../utils/pathUtils';
 import { isImportOrExportReference } from '../utils/referenceUtils';
 import { getWebviewHtml } from '../views/WaypointWebviewViewProvider';
@@ -181,11 +183,13 @@ suite('Deep Analysis Webview', () => {
 	});
 
 	test('renders a report with escaped analysis details', () => {
-		const html = getWebviewHtml('ready', createResult());
+		const html = getWebviewHtml('ready', createResult(), undefined, createGraph(), createGitActivity());
 
 		assert.ok(html.includes('Waypoint Deep Analysis'));
 		assert.ok(html.includes('Likely Purpose'));
 		assert.ok(html.includes('Depends On'));
+		assert.ok(html.includes('Dependency Graph'));
+		assert.ok(html.includes('Commit Activity'));
 		assert.ok(html.includes('signature: parse(value: string): Parser'));
 		assert.ok(html.includes('&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;.ts'));
 		assert.strictEqual(html.includes('<script>alert("x")</script>.ts'), false);
@@ -196,5 +200,89 @@ suite('Deep Analysis Webview', () => {
 
 		assert.ok(html.includes('Open a file to see Waypoint analysis.'));
 		assert.ok(html.includes('Select a JavaScript or TypeScript file'));
+	});
+
+	const createGraph = (): DependencyGraph => ({
+		nodes: [
+			{
+				filePath: path.join('C:', 'project', 'src', 'parser.ts'),
+				relativePath: 'src/parser.ts',
+			},
+			{
+				filePath: path.join('C:', 'project', 'src', 'types.ts'),
+				relativePath: 'src/types.ts',
+			},
+		],
+		edges: [
+			{
+				from: {
+					filePath: path.join('C:', 'project', 'src', 'parser.ts'),
+					relativePath: 'src/parser.ts',
+				},
+				to: {
+					filePath: path.join('C:', 'project', 'src', 'types.ts'),
+					relativePath: 'src/types.ts',
+				},
+			},
+		],
+		truncated: false,
+	});
+
+	const createGitActivity = (): GitActivity => ({
+		days: [
+			{ date: '2026-07-01', commits: 2 },
+			{ date: '2026-07-02', commits: 1 },
+		],
+		topChangedFiles: [
+			{ relativePath: 'src/parser.ts', changes: 3 },
+		],
+		available: true,
+	});
+});
+
+suite('Workspace Graph Analyzer', () => {
+	test('returns only edges connected to the target file', () => {
+		const targetFilePath = path.join('C:', 'project', 'src', 'target.ts');
+		const unrelatedFilePath = path.join('C:', 'project', 'src', 'unrelated.ts');
+		const graph: DependencyGraph = {
+			nodes: [],
+			edges: [
+				{
+					from: { filePath: targetFilePath, relativePath: 'src/target.ts' },
+					to: { filePath: path.join('C:', 'project', 'src', 'dep.ts'), relativePath: 'src/dep.ts' },
+				},
+				{
+					from: { filePath: unrelatedFilePath, relativePath: 'src/unrelated.ts' },
+					to: { filePath: path.join('C:', 'project', 'src', 'other.ts'), relativePath: 'src/other.ts' },
+				},
+			],
+			truncated: false,
+		};
+
+		const neighborhood = getGraphNeighborhood(graph, targetFilePath);
+
+		assert.strictEqual(neighborhood.edges.length, 1);
+		assert.strictEqual(neighborhood.nodes.length, 2);
+	});
+});
+
+suite('Git Activity Analyzer', () => {
+	test('parses commits by day and top changed files', () => {
+		const activity = parseGitLog([
+			'commit:2026-07-01',
+			'src/a.ts',
+			'src/b.ts',
+			'commit:2026-07-01',
+			'src/a.ts',
+			'commit:2026-07-02',
+			'src/c.ts',
+		].join('\n'));
+
+		assert.deepStrictEqual(activity.days, [
+			{ date: '2026-07-01', commits: 2 },
+			{ date: '2026-07-02', commits: 1 },
+		]);
+		assert.strictEqual(activity.topChangedFiles[0].relativePath, 'src/a.ts');
+		assert.strictEqual(activity.topChangedFiles[0].changes, 2);
 	});
 });
